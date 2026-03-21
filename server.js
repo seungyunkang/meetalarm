@@ -283,7 +283,12 @@ const httpServer = http.createServer(async (req, res) => {
     // ── 일정 (schedules) ────────────────────────
     if (req.method === 'GET' && url === '/api/schedules') {
       const { rows } = await pool.query('SELECT * FROM schedules WHERE company_id=$1', [companyId]);
-      return send(rows);
+      const { rows: cRows } = await pool.query('SELECT * FROM schedule_comments WHERE company_id=$1 ORDER BY created_at ASC', [companyId]);
+      const result = rows.map(s => ({
+        ...s,
+        comments: cRows.filter(c => c.schedule_id === s.id)
+      }));
+      return send(result);
     }
 
     if (req.method === 'POST' && url === '/api/schedules') {

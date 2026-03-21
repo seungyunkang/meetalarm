@@ -1297,9 +1297,9 @@ function renderRecurringTemplates() {
       <div style="font-weight:700; font-size:16px; margin-bottom:5px; color:var(--purple)">🔁 ${t.title}</div>
       <div style="font-size:13px; color:var(--text2)">주기: ${t.freq} | 시간: ${t.time}</div>
       <div style="font-size:13px; color:var(--text2)">기본 장소: ${t.location}</div>
-      <div style="font-size:12px; color:var(--text3); margin-top:5px;">👤 참석자: ${(t.attendees||[]).length}명 지정됨</div>
+      <div style="font-size:12px; color:var(--text3); margin-top:5px;">👤 주최자: ${t.organizer} | 참석자: ${(t.attendees||[]).length}명</div>
       <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
-        <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')">삭제</button>
+        ${t.organizer === S.currentUser ? `<button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')">삭제</button>` : `<span style="font-size:12px;color:var(--text3)">주최자만 삭제 가능</span>`}
       </div>
     </div>
   `).join('');
@@ -1864,12 +1864,15 @@ function renderDailyViewList(dateStr) {
 }
 
 async function addComment(schId) {
-    const input = document.getElementById(`cmt-input-${schId}`); const text = input.value.trim(); if (!text) return;
+    const input = document.getElementById(`cmt-input-${schId}`); 
+    const text = input.value.trim(); 
+    if (!text) return;
+    input.value = '';
     try {
       await api('POST', `/schedules/${schId}/comments`, { author: S.currentUser, content: text });
-      const sch = S.schedules.find(s => s.id === schId);
-      if (sch) { if (!sch.comments) sch.comments = []; sch.comments.push({ author: S.currentUser, content: text, timestamp: Date.now() }); input.value = ''; renderDailyViewList(document.getElementById('daily-view-date').value); }
-    } catch(e) { toast('API 오류', 'error'); }
+      await loadSchedules();
+      renderDailyViewList(document.getElementById('daily-view-date').value);
+    } catch(e) { toast('댓글 등록 오류', 'error'); }
 }
 
 function openAddSchFromDaily() {
