@@ -1081,7 +1081,7 @@ function doLogout() { localStorage.removeItem('ma_user'); if(ws) ws.close(); loc
 
 async function enterApp(userName) {
   S.currentUser = userName; const user = S.users.find(u=>u.name===userName); S.currentDeptId = user ? user.dept_id : '';
-  document.getElementById('server-setup').style.display='none'; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='flex';
+  document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='flex';
   const dept = S.depts.find(d=>d.id===S.currentDeptId);
   document.getElementById('sidebar-name').textContent = userName; document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
   S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
@@ -1745,14 +1745,20 @@ function addAttendee(name, deptId) { if(selectedAttendees.find(s=>s.name===name)
 function removeAttendee(name) { selectedAttendees=selectedAttendees.filter(s=>s.name!==name); renderSelChips(); }
 function toggleDept(id) { const d=S.depts.find(x=>x.id===id); const chip=document.getElementById(`dchip-${id}`); if(chip.classList.contains('active')) { selectedAttendees=selectedAttendees.filter(s=>s.deptId!==id); chip.classList.remove('active'); } else { S.users.filter(u=>u.dept_id===id).forEach(u=>{ if(!selectedAttendees.find(s=>s.name===u.name)) selectedAttendees.push({name:u.name,deptId:id,color:d?.color||'#1BB5B8',deptName:d?.name||''}); }); chip.classList.add('active'); } renderSelChips(); }
 function renderSelChips() { const el=document.getElementById('sel-chips'); document.getElementById('sel-count').textContent=selectedAttendees.length; if(!selectedAttendees.length){ el.innerHTML=`<span style="font-size:12px;color:var(--text3)">참석자를 추가해주세요</span>`; return; } el.innerHTML=selectedAttendees.map(a=>`<div class="person-chip"><div class="chip-av" style="background:${a.color}22;color:${a.color}">${a.name}</div><span>${a.name}</span><span style="font-size:10px;color:var(--text3)">${a.deptName}</span><span class="chip-x" onclick="removeAttendee('${a.name}')">✕</span></div>`).join(''); }
+let _submitting = false;
 async function submitMeeting() {
+  if(_submitting) return;
   const title=document.getElementById('f-title').value.trim(); const date=document.getElementById('f-date').value; const time=document.getElementById('f-time').value; const location=document.getElementById('f-loc').value.trim(); const agenda=document.getElementById('f-agenda').value.trim(); const zoomLink=document.getElementById('f-remote-link').value.trim();
   if(!title||!date||!time||!location){ toast(g_lang==='ko'?'항목을 모두 입력하세요':'Fill all required fields','error'); return; } const dt=new Date(`${date}T${time}`); if(dt<new Date()){ toast(g_lang==='ko'?'현재 시간 이후로 설정하세요':'Must be in future','error'); return; }
+  _submitting = true;
+  const btn = document.querySelector('button[onclick="submitMeeting()"]');
+  if(btn) btn.disabled = true;
   try {
     const r = await api('POST','/meetings',{ title, datetime:dt.toISOString(), location, zoomLink, agenda, organizer:S.currentUser, attendees:selectedAttendees.map(a=>a.name), alarm1:alarm1Min, }); if(r.error) throw new Error(r.error);
     document.getElementById('f-title').value=''; document.getElementById('f-agenda').value=''; document.getElementById('f-remote-link').value=''; document.getElementById('f-loc').value=''; selectedAttendees=[]; renderSelChips(); document.querySelectorAll('.dept-chip').forEach(c=>c.classList.remove('active'));
-    toast(g_lang==='ko'?'등록되었습니다':'Success','success'); renderDashboard(); updateBadges(); goto('dashboard');
+    toast(g_lang==='ko'?'등록되었습니다':'Success','success'); await loadMeetings(); renderDashboard(); updateBadges(); goto('dashboard');
   } catch(e) { toast(g_lang==='ko'?'실패':'Failed', 'error'); }
+  finally { _submitting = false; if(btn) btn.disabled = false; }
 }
 function setDefaultFormDate() { const now=new Date(), p=n=>String(n).padStart(2,'0'); document.getElementById('f-date').value=`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`; const ft=new Date(now.getTime()+60*60000); document.getElementById('f-time').value=`${p(ft.getHours())}:${p(ft.getMinutes())}`; }
 
@@ -1876,19 +1882,22 @@ function openAddSchFromDaily() {
 }
 function closeSchModal() { document.getElementById('add-sch-overlay').classList.remove('show'); setTimeout(() => { openDailyViewModal(document.getElementById('add-sch-date').value); }, 200); }
 
+let _savingSchedule = false;
 async function saveSchedule() {
+    if(_savingSchedule) return;
     const content = document.getElementById('add-sch-content').value.trim();
     if(!content) { toast(g_lang==='ko' ? '일정 내용을 입력하세요.' : 'Enter content.', 'error'); return; }
     const date = document.getElementById('add-sch-date').value;
     let visibility = 'team'; if (S.schFilter === 'my') visibility = 'private'; else if (S.schFilter === 'all') visibility = 'public';
     const newSch = { id: 'sch_' + Date.now(), date: date, content: content, author: S.currentUser, deptId: S.currentDeptId, visibility: visibility, comments: [] };
-    
+    _savingSchedule = true;
     try {
       await api('POST', '/schedules', newSch);
-      S.schedules.push(newSch); 
+      await loadSchedules();
       toast(g_lang==='ko' ? '일정이 저장되었습니다.' : 'Schedule saved.', 'success'); document.getElementById('add-sch-overlay').classList.remove('show');
       renderSchCalendar(); setTimeout(() => { openDailyViewModal(date); }, 200);
     } catch(e) { toast('API 오류', 'error'); }
+    finally { _savingSchedule = false; }
 }
 
 async function delSchedule(id) {
