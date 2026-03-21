@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>MeetAlarm - Enterprise Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ── DAY MODE ── */
+:root {
+  --bg: #f4f5f7; --bg2: #ffffff; --bg3: #f8f9fa; --bg4: #eef0f2;
+  --border: #e2e4e8; --border2: #cbd0d6; --border3: #a6adb6;
+  --brand: #1BB5B8; --brand2: #149194; --brand3: #e0f7f8; --brand-glow: rgba(27,181,184,.15);
+  --teal: #0d9488; --green: #16a34a; --green-bg: #dcfce7; --green-glow: rgba(22,163,74,.15);
+  --amber: #d97706; --amber-bg: #fef3c7; --amber-glow: rgba(217,119,6,.15);
+  --red: #dc2626;   --red-bg: #fee2e2;   --red-glow: rgba(220,38,38,.15);
+  --purple: #9333ea;--purple-bg: #f3e8ff;
+  --text: #111827; --text2: #4b5563; --text3: #6b7280;
+  --radius: 10px; --radius2: 14px; --tr: .18s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── NIGHT MODE ── */
+[data-theme="dark"] {
+  --bg: #0d1117; --bg2: #161b26; --bg3: #1c2333; --bg4: #222c3c;
+  --border: #2a3550; --border2: #3d5070; --border3: #4a608a;
+  --brand3: #113a40; 
+  --teal: #2dd4bf; --green: #22c55e; --green-bg: #052e16; --green-glow: rgba(34,197,94,.15);
+  --amber: #f59e0b; --amber-bg: #1c1503; --amber-glow: rgba(245,158,11,.15);
+  --red: #ef4444;   --red-bg: #1c0505;   --red-glow: rgba(239,68,68,.15);
+  --purple: #a78bfa;--purple-bg: #1e1535;
+  --text: #e2e8f0; --text2: #8b9ab5; --text3: #4a5568;
+}
+
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ─────────────────── */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:230px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:background var(--tr), border-color var(--tr)}
+.main{flex:1;overflow:hidden;background:var(--bg);transition:background var(--tr)}
+.content-area{height:100%;overflow-y:auto;padding:28px 32px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+/* ── SIDEBAR ────────────────── */
+.sidebar-top{padding:18px 14px 14px}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--brand),var(--teal));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;flex-shrink:0}
+.logo-text{font-weight:700;font-size:15px;color:var(--text)}
+.logo-sub{font-size:10px;color:var(--text3)}
+.user-info-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px}
+.user-info-name{font-weight:600;font-size:13px;color:var(--text)}
+.user-info-dept{font-size:11px;color:var(--text3)}
+.user-info-row{display:flex;justify-content:space-between;align-items:center}
+.nav-section{padding:0 8px;flex:1; overflow-y:auto;}
+.nav-label{font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;padding:8px 8px 4px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all var(--tr);border:none;background:none;width:100%;text-align:left;font-family:inherit;position:relative}
+.nav-btn:hover{background:var(--bg3);color:var(--text)}
+.nav-btn.active{background:var(--brand3);color:var(--brand)}
+.nav-btn.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:2px;background:var(--brand);border-radius:0 2px 2px 0}
+.nav-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.nav-btn.active .nav-icon{background:var(--brand-glow)}
+.nav-badge{margin-left:auto;background:var(--brand);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
+.conn-status{padding:10px 14px;margin:0 8px 8px;border-radius:var(--radius);font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px}
+.conn-status.online{background:var(--green-bg);color:var(--green)}
+.conn-status.offline{background:var(--red-bg);color:var(--red)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.sidebar-bottom{padding:12px}
+.logout-btn{width:100%;padding:8px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:inherit;transition:all var(--tr)}
+.logout-btn:hover{background:var(--bg3);color:var(--text)}
+
+/* ── PAGE ───────────────────── */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
+.page-title{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;color:var(--text)}
+.page-sub{color:var(--text2);font-size:17px}
+
+/* ── STATS ──────── */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:16px 18px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.stat-num{font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:2px}
+.stat-label{font-size:15px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-icon{position:absolute;right:14px;top:14px;font-size:20px;opacity:.2}
+
+/* ── CALENDAR ───────────────── */
+.cal-controls { display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:20px; font-size:20px; font-weight:700; color:var(--text) }
+.cal-controls button { background:var(--bg2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 12px; font-size:17px; cursor:pointer; transition:all var(--tr); box-shadow:0 1px 2px rgba(0,0,0,.05); }
+.cal-controls button:hover { background:var(--bg3); border-color:var(--brand); color:var(--brand); }
+.cal-grid { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:var(--radius2); overflow:hidden; background:var(--bg2); box-shadow:0 2px 8px rgba(0,0,0,.03); }
+.cal-header-row { display:grid; grid-template-columns:repeat(7, 1fr); background:var(--bg3); border-bottom:1px solid var(--border); text-align:center; font-size:16px; font-weight:600; padding:10px 0; color:var(--text2); }
+.cal-body { display:grid; grid-template-columns:repeat(7, 1fr); grid-auto-rows:minmax(110px, auto); }
+.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px; display:flex; flex-direction:column; gap:4px; transition:background .2s; }
+.cal-cell:hover { background:var(--bg3); }
+.cal-cell:nth-child(7n) { border-right:none; }
+.cal-cell.empty { background:var(--bg); }
+.cal-cell.today { background:var(--green-bg); box-shadow:inset 0 0 0 1px var(--green); position:relative; z-index:1; }
+.cal-date { font-size:17px; font-weight:700; margin-bottom:6px; padding-left:2px; color:var(--text2); }
+.cal-cell.today .cal-date { color:var(--green); }
+.cal-ev-list { display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto; scrollbar-width:none; }
+.cal-ev-list::-webkit-scrollbar { display:none; }
+.cal-ev { font-size:15px; padding:4px 6px; border-radius:6px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
+.cal-ev:hover { filter:brightness(0.95); transform:translateX(2px); }
+.cal-ev.mine { background:var(--brand); color:#fff; font-weight:600; }
+.cal-ev.other { background:transparent; color:var(--text2); border-left:3px solid var(--border2); padding-left:6px; }
+.ev-time { font-size:13px; opacity:0.9; font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+
+/* ── MEETING LIST ── */
+#meeting-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { #meeting-list { grid-template-columns: 1fr; } } 
+
+/* ── MEETING CARD & RECURRING ───────────── */
+.meeting-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:18px;margin-bottom:0;transition:all var(--tr);position:relative;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+.meeting-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.meeting-card.status-live::after{background:var(--green);box-shadow:0 0 8px var(--green)}
+.meeting-card.status-soon::after{background:var(--amber)}
+.meeting-card.status-upcoming::after{background:var(--brand)}
+.meeting-card.status-done::after{background:var(--border2)}
+.meeting-card.status-recurring::after{background:var(--purple);box-shadow:0 0 8px var(--purple)}
+.meeting-card:hover{border-color:var(--border2);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.m-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.m-title{font-weight:700;font-size:19px;letter-spacing:-.2px;color:var(--text)}
+.m-badges{display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;margin-left:10px}
+.m-meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--text2);font-size:16px;margin-bottom:10px;font-weight:500}
+.m-meta span{display:flex;align-items:center;gap:4px}
+.m-agenda{font-size:16px;color:var(--text2);background:var(--bg3);border-radius:8px;padding:8px 12px;margin-bottom:10px;border-left:3px solid var(--border2);line-height:1.6}
+.m-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m-actions{margin-left:auto;display:flex;gap:5px;flex-wrap:wrap}
+
+.avatar-stack { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.avatar { min-width:28px; height:28px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:1px solid var(--border2); flex-shrink:0; padding:0 8px; white-space:nowrap; }
+
+.m-alarm-bar{display:flex;gap:0;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+.alarm-step{flex:1;text-align:center}
+.alarm-dot{width:18px;height:18px;border-radius:50%;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:8px;border:2px solid var(--border2);background:var(--bg2);transition:all var(--tr);color:#fff}
+.alarm-dot.done{background:var(--green);border-color:var(--green)}
+.alarm-dot.active{background:var(--amber);border-color:var(--amber);animation:pulse 1.5s ease infinite}
+.alarm-step-label{font-size:14px;color:var(--text3);font-weight:600}
+
+/* ── BADGE ──────────────────── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600;white-space:nowrap}
+.badge-brand{background:var(--brand-glow);color:var(--brand2)}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-teal{background:rgba(45,212,191,.15);color:var(--teal)}
+.badge-purple{background:var(--purple-bg);color:var(--purple)}
+.badge-purple-rec{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple);}
+.badge-gray{background:var(--bg4);color:var(--text3)}
+
+/* ── BUTTON ─────────────────── */
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all var(--tr);font-family:inherit;display:inline-flex;align-items:center;gap:6px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+.btn-primary:hover{filter:brightness(1.08);box-shadow:0 4px 12px var(--brand-glow)}
+.btn-sm{padding:5px 11px;font-size:11px;border-radius:7px}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);box-shadow:none}
+.btn-ghost:hover{background:var(--bg3);color:var(--text);border-color:var(--border3)}
+.btn-danger{background:var(--red-bg);border:1px solid var(--red-glow);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-full{width:100%;justify-content:center;padding:11px}
+
+/* ── FORM ───────────────────── */
+.form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:22px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.02)}
+.form-card-title{font-weight:700;font-size:14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.form-row{margin-bottom:13px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
+.form-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;transition:all var(--tr);font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02)}
+.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
+.form-input::placeholder{color:var(--border3)}
+textarea.form-input{resize:vertical;min-height:76px}
+select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.alarm-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.alarm-preset{padding:5px 12px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:12px;cursor:pointer;transition:all var(--tr);font-family:inherit;font-weight:500}
+.alarm-preset.active{border-color:var(--brand);background:var(--brand3);color:var(--brand2);font-weight:700}
+.custom-min-wrap{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;transition:all var(--tr)}
+.custom-min-wrap:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
+.custom-min-wrap input{width:44px;background:none;border:none;color:var(--text);font-size:13px;text-align:center;outline:none;font-family:'JetBrains Mono',monospace;font-weight:600}
+.custom-min-wrap span{font-size:11px;color:var(--text3);font-weight:600}
+
+/* ── RECURRING SPECIFIC CSS ── */
+.day-selector { display: flex; gap: 4px; margin-top: 5px; }
+.day-dot { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 600; transition: all var(--tr); color: var(--text2); }
+.day-dot.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+/* ── ATTENDEE PICKER ─────────── */
+.picker-tabs{display:flex;background:var(--bg4);border-radius:9px;padding:3px;width:fit-content;margin-bottom:12px;border:1px solid var(--border)}
+.picker-tab{padding:5px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);transition:all var(--tr);border:none;background:none;font-family:inherit}
+.picker-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.search-wrap{position:relative}
+.search-dd{position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;margin-top:3px;max-height:160px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.search-dd.open{display:block}
+.search-dd-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background var(--tr);font-size:13px;font-weight:500;color:var(--text)}
+.search-dd-item:hover{background:var(--bg3)}
+.dept-grid{display:flex;gap:7px;flex-wrap:wrap}
+.dept-chip{display:flex;align-items:center;gap:6px;padding:6px 13px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);transition:all var(--tr)}
+.dept-chip:hover{border-color:var(--brand);color:var(--brand)}
+.dept-chip.active{background:var(--brand3);border-color:var(--brand);color:var(--brand2)}
+.chips-wrap{display:flex;gap:5px;flex-wrap:wrap;min-height:28px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+.person-chip{display:flex;align-items:center;gap:5px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:3px 9px 3px 5px;font-size:12px;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.04);color:var(--text)}
+.chip-av{min-width:18px;height:18px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;padding:0 6px;white-space:nowrap}
+.chip-x{cursor:pointer;color:var(--border3);font-size:11px;margin-left:1px}
+.chip-x:hover{color:var(--red)}
+
+/* ── MEMBERS ────────────────── */
+.dept-section{margin-bottom:22px}
+.dept-sec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.dept-color-bar{width:4px;height:20px;border-radius:2px;flex-shrink:0}
+.members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px}
+.member-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;align-items:center;gap:9px;transition:border-color var(--tr);box-shadow:0 1px 3px rgba(0,0,0,.02)}
+.member-card:hover{border-color:var(--border2);box-shadow:0 4px 10px rgba(0,0,0,.06)}
+.member-card.me{border-color:var(--brand);background:var(--brand3)}
+.member-av{min-width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;padding:0 10px;white-space:nowrap}
+.member-card-actions{display:none;gap:3px;margin-left:auto}
+.member-card:hover .member-card-actions{display:flex}
+
+/* ── AUTH SCREEN ────────────── */
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+#server-setup{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:center;justify-content:center}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:34px 38px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.auth-logo{text-align:center;margin-bottom:26px}
+.auth-logo .lm{width:50px;height:50px;background:linear-gradient(135deg,var(--brand),var(--teal));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;margin:0 auto 10px;box-shadow:0 4px 10px var(--brand-glow)}
+.auth-logo h1{font-size:20px;font-weight:700;color:var(--text)}
+.auth-logo p{font-size:12px;color:var(--text3);margin-top:2px}
+.auth-tabs{display:flex;background:var(--bg4);border-radius:10px;padding:3px;margin-bottom:22px;border:1px solid var(--border)}
+.auth-tab{flex:1;padding:7px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);transition:all var(--tr);border:none;background:none;font-family:inherit;border-radius:8px}
+.auth-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.auth-err{background:var(--red-bg);border:1px solid var(--red-glow);color:var(--red);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;margin-bottom:10px;display:none}
+.auth-err.show{display:block}
+.auth-ok{background:var(--green-bg);border:1px solid var(--green-glow);color:var(--green);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;margin-bottom:10px;display:none}
+.auth-ok.show{display:block}
+
+/* ── OVERLAY / MODAL ─────────── */
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.6);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px)}
+[data-theme="dark"] .overlay { background:rgba(0,0,0,.85); }
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.12);transform:scale(.92);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.modal.minutes-lg { max-width: 750px; width: 95%; } 
+.overlay.show .modal{transform:scale(1)}
+.modal.mod-first{border-top:6px solid var(--brand)}
+.modal.mod-five{border-top:6px solid var(--amber)}
+.modal.mod-start{border-top:6px solid var(--green)}
+.alarm-glyph{font-size:50px;display:block;text-align:center;margin-bottom:14px;animation:bounce .8s ease infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+
+/* ── SCHEDULE CALENDAR ── */
+.sch-cell { cursor: pointer; }
+.sch-ev { background:var(--bg2); border-left:3px solid var(--border2); padding:5px 8px; border-radius:6px; font-size:12px; margin-bottom:4px; box-shadow:0 1px 2px rgba(0,0,0,0.05); color:var(--text); line-height:1.4; transition:filter 0.15s; }
+.sch-ev:hover { filter:brightness(0.95); }
+.sch-ev.private { border-left-color: var(--teal); background: rgba(13,148,136,0.06); }
+.sch-ev.team { border-left-color: var(--brand); background: rgba(27,181,184,0.06); }
+.sch-ev.public { border-left-color: var(--amber); background: rgba(217,119,6,0.06); }
+.sch-text-wrap { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; word-break: break-all; }
+.sch-author { font-weight: 700; margin-right: 4px; }
+
+/* ── DAILY DETAIL VIEW ── */
+.dv-list { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; margin-bottom: 16px; }
+.dv-item { background:var(--bg3); border:1px solid var(--border); border-radius: 12px; padding: 12px; }
+.dv-item.private { border-left: 4px solid var(--teal); }
+.dv-item.team { border-left: 4px solid var(--brand); }
+.dv-item.public { border-left: 4px solid var(--amber); }
+.dv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; color: var(--text3); }
+.dv-content { font-size: 14px; color: var(--text); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.dv-comments { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border2); }
+.dv-comment { font-size: 12px; padding: 6px 8px; background: var(--bg2); border-radius: 6px; margin-bottom: 4px; border: 1px solid var(--border2); }
+.dv-comment-author { font-weight: 700; color: var(--brand2); margin-right: 6px; }
+.dv-comment-input-wrap { display: flex; gap: 6px; margin-top: 8px; }
+.dv-comment-input { flex: 1; padding: 6px 10px; font-size: 12px; border: 1px solid var(--border2); border-radius: 6px; background: var(--bg2); color: var(--text); outline:none; }
+.dv-comment-input:focus { border-color: var(--brand); }
+
+/* ── MINUTES 2.0 HISTORY ── */
+.min-history-list { max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 15px; display:flex; flex-direction:column; gap:10px; }
+.min-history-item { background: var(--bg3); padding: 12px 14px; border-radius: 10px; border-left: 3px solid var(--brand); }
+.min-history-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+.min-history-author { font-weight: 700; color: var(--text); }
+.min-history-content { font-size: 14px; color: var(--text); white-space: pre-wrap; line-height: 1.6; word-break: break-all; }
+
+/* ── SETTINGS PANEL ─────────── */
+.settings-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:20px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.02)}
+.sp-title{font-weight:700;font-size:14px;margin-bottom:4px;color:var(--text)}
+.sp-desc{font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6}
+.sp-status{font-size:12px;font-weight:600;margin-top:10px;padding:8px 12px;border-radius:8px;display:flex;align-items:center;gap:6px}
+.sp-status.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-glow)}
+.sp-status.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-glow)}
+
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .15s;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+.color-swatch.active{border-color:var(--text)}
+.dept-actions{display:flex;gap:5px}
+
+.div{height:1px;background:var(--border);margin:14px 0}
+.empty{text-align:center;padding:56px 20px;color:var(--text3)}
+.empty-icon{font-size:44px;margin-bottom:14px;opacity:.5}
+.empty-text{font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px}
+
+/* ── TODAY SUMMARY MODAL ── */
+.today-item { cursor:pointer; transition:all 0.2s ease; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; font-size:13px; display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 2px rgba(0,0,0,.02); }
+.today-item.meet { border-left: 4px solid var(--purple); }
+.today-item.sch-private { border-left: 4px solid var(--teal); }
+.today-item.sch-team { border-left: 4px solid var(--brand); }
+.today-item.sch-public { border-left: 4px solid var(--amber); }
+.today-item-top { display:flex; justify-content:space-between; color:var(--text3); font-size:12px; font-weight:600;}
+.today-item-title { font-weight:700; color:var(--text); font-size:14px; transition:all 0.2s ease;}
+.today-item.done-strike { opacity: 0.5; filter: grayscale(1); }
+.today-item.done-strike .today-item-title { text-decoration: line-through; }
+
+/* ── TOAST ──────────────────── */
+.toasts{position:fixed;top:14px;right:14px;z-index:9000;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:11px 15px;font-size:13px;font-weight:600;display:flex;align-items:flex-start;gap:9px;max-width:320px;pointer-events:all;animation:tIn .22s ease;box-shadow:0 6px 20px rgba(0,0,0,.1);color:var(--text)}
+@keyframes tIn{from{transform:translateX(100%);opacity:0}to{opacity:1}}
+.toast.success{border-left:4px solid var(--green)}
+.toast.error{border-left:4px solid var(--red)}
+.toast.info{border-left:4px solid var(--brand)}
+
+</style>
+</head>
+<body>
+
+<script>
+  const savedTheme = localStorage.getItem('ma_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+</script>
+
+<!-- 서버 설정 화면 제거됨 (URL 고정) -->
+
+<!-- ★ 추가: 회사 설정 화면 (초대 코드 단계) -->
+<div id="company-setup" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9998; align-items:center; justify-content:center;">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="lm">🏢</div>
+      <h1>그룹 설정</h1>
+      <p>새 그룹을 만들거나 초대 코드로 가입하세요</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-join-btn" onclick="showCoTab('join')">초대코드로 가입</button>
+      <button class="auth-tab" id="tab-create-btn" onclick="showCoTab('create')">새 회사 등록</button>
+    </div>
+    <div id="co-join">
+      <div class="form-row">
+        <label class="form-label">초대 코드</label>
+        <div style="display:flex; gap:5px">
+          <input class="form-input" id="invite-code-input" placeholder="코드 입력 (예: AB1C23)" />
+          <button class="btn btn-primary" onclick="checkInviteCode()">확인</button>
+        </div>
+      </div>
+    </div>
+    <div id="co-create" style="display:none">
+      <div class="form-row">
+        <label class="form-label">회사 / 팀 이름</label>
+        <input class="form-input" id="new-company-name" placeholder="예: 우리컴퍼니" />
+      </div>
+      <button class="btn btn-primary btn-full" id="btn-create-co" onclick="createNewCompany()">등록 및 초대코드 발행</button>
+    </div>
+    <div style="text-align:right; margin-top:12px">
+      <span style="font-size:11px; color:var(--text3); cursor:pointer" onclick="changeServer()">서버 주소 변경</span>
+    </div>
+  </div>
+</div>
+
+<div id="auth-screen" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="lm">📅</div>
+      <h1>MeetAlarm</h1>
+      <p data-i18n="sys_desc">미팅 알람 시스템</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login-btn" onclick="showAuthTab('login')" data-i18n="tab_login">로그인</button>
+      <button class="auth-tab" id="tab-reg-btn" onclick="showAuthTab('register')" data-i18n="tab_register">회원가입</button>
+    </div>
+
+    <div id="tab-login">
+      <div class="auth-err" id="login-err"></div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_name">이름</label>
+        <select class="form-input" id="login-name"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_pw">비밀번호</label>
+        <input class="form-input" type="password" id="login-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:6px" onclick="doLogin()" data-i18n="btn_login">로그인</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3);font-weight:500">
+        <span data-i18n="no_account">계정이 없으신가요?</span> <span style="color:var(--brand);cursor:pointer;font-weight:700" onclick="showAuthTab('register')" data-i18n="tab_register">회원가입</span>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <span style="font-size:11px;color:var(--text3);cursor:pointer;font-weight:500" onclick="changeCompany()">그룹 변경 (초대코드 재입력)</span>
+      </div>
+    </div>
+
+    <div id="tab-reg" style="display:none">
+      <div class="auth-err" id="reg-err"></div>
+      <div class="auth-ok" id="reg-ok"></div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_name_req">이름 *</label>
+        <input class="form-input" id="reg-name" placeholder="본인 이름" />
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_dept_req">부서 *</label>
+        <select class="form-input" id="reg-dept"></select>
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_pw_req">비밀번호 * (4자 이상)</label>
+        <input class="form-input" type="password" id="reg-pw" placeholder="비밀번호" />
+      </div>
+      <div class="form-row">
+        <label class="form-label" data-i18n="label_pw_conf">비밀번호 확인 *</label>
+        <input class="form-input" type="password" id="reg-pw2" placeholder="비밀번호 재입력" onkeydown="if(event.key==='Enter')doRegister()" />
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:6px" onclick="doRegister()" data-i18n="btn_register">가입하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo-row">
+        <div class="logo-mark">📅</div>
+        <div><div class="logo-text">MeetAlarm</div><div class="logo-sub" data-i18n="sys_desc">미팅 알람 시스템</div></div>
+      </div>
+      <div class="user-info-card">
+        <div class="user-info-row">
+          <div>
+            <div class="user-info-name" id="sidebar-name">-</div>
+            <div class="user-info-dept" id="sidebar-dept">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label" data-i18n="nav_menu">메뉴</div>
+      <button class="nav-btn active" id="nav-dashboard" onclick="goto('dashboard')">
+        <div class="nav-icon">🏠</div><span data-i18n="nav_dash">대시보드</span>
+        <span class="nav-badge" id="badge-upcoming" style="display:none">0</span>
+      </button>
+      <button class="nav-btn" id="nav-create" onclick="goto('create')">
+        <div class="nav-icon">✏️</div><span data-i18n="nav_create">미팅 등록</span>
+      </button>
+      <button class="nav-btn" id="nav-recurring" onclick="goto('recurring')">
+        <div class="nav-icon">🔁</div><span data-i18n="nav_recurring">정기 미팅 관리</span>
+      </button>
+      <button class="nav-btn" id="nav-schedules" onclick="goto('schedules')">
+        <div class="nav-icon">🗓️</div><span data-i18n="nav_schedules">개인 및 팀 일정</span>
+      </button>
+      <button class="nav-btn" id="nav-members" onclick="goto('members')">
+        <div class="nav-icon">👥</div><span data-i18n="nav_members">구성원 관리</span>
+      </button>
+      <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
+        <div class="nav-icon">⚙️</div><span data-i18n="nav_settings">연동 설정</span>
+      </button>
+
+      <button class="nav-btn" id="nav-today" onclick="openTodayModal()" style="margin-top:20px; border:1px solid var(--brand); color:var(--brand); background:var(--brand-glow);">
+        <div class="nav-icon" style="background:transparent;">⭐</div><span data-i18n="nav_today">오늘 내 일정</span>
+      </button>
+    </div>
+    <div id="conn-status-bar" class="conn-status offline" style="margin-top:auto">
+      <div class="conn-dot"></div><span id="conn-text" data-i18n="conn_wait">연결 중...</span>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="logout-btn" id="lang-toggle-btn" onclick="toggleLang()" style="margin-bottom:8px">🌐 English Mode</button>
+      <button class="logout-btn" id="theme-toggle-btn" onclick="toggleTheme()" style="margin-bottom:8px">🌙 다크 모드</button>
+      <button class="logout-btn" onclick="doLogout()" data-i18n="btn_logout">🚪 로그아웃</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="content-area">
+
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title" id="dash-greeting">안녕하세요 👋</div>
+            <div class="page-sub" id="dash-date"></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;background:var(--bg4);border-radius:9px;padding:3px;border:1px solid var(--border)">
+              <button class="picker-tab active" id="filter-mine" onclick="setFilter('mine')" style="padding:5px 12px;font-size:16px" data-i18n="filter_mine">내 미팅만</button>
+              <button class="picker-tab" id="filter-all" onclick="setFilter('all')" style="padding:5px 12px;font-size:16px" data-i18n="filter_all">전체 보기</button>
+              <div style="width:1px;background:var(--border2);margin:4px"></div>
+              <button class="picker-tab" id="view-calendar" onclick="setViewMode('calendar')" style="padding:5px 12px;font-size:16px" data-i18n="view_cal">캘린더 보기</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btn-show-hidden" onclick="toggleShowHidden()" style="display:none;font-size:13px" data-i18n="btn_show_hid">👁 숨긴 미팅</button>
+          </div>
+        </div>
+
+        <div id="list-view">
+          <div class="stats-row">
+            <div class="stat-card"><div class="stat-num" style="color:var(--brand)" id="s-total">0</div><div class="stat-label" data-i18n="stat_total">전체 미팅</div><div class="stat-icon">📊</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="s-upcoming">0</div><div class="stat-label" data-i18n="stat_up">예정 미팅</div><div class="stat-icon">⏳</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--purple)" id="s-live">0</div><div class="stat-label" data-i18n="stat_live">진행중 미팅</div><div class="stat-icon">▶️</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="s-today">0</div><div class="stat-label" data-i18n="stat_today">오늘 미팅</div><div class="stat-icon">📅</div></div>
+            <div class="stat-card"><div class="stat-num" style="color:var(--red)" id="s-pending">0</div><div class="stat-label" data-i18n="stat_wait">대기 알람</div><div class="stat-icon">🔔</div></div>
+          </div>
+          <div id="meeting-list"></div>
+        </div>
+
+        <div id="calendar-view" style="display:none">
+          <div class="cal-controls">
+            <button onclick="changeMonth(-1)">◀ <span data-i18n="cal_prev">이전달</span></button>
+            <span id="cal-month-label"></span>
+            <button onclick="changeMonth(1)"><span data-i18n="cal_next">다음달</span> ▶</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-create">
+        <div class="page-header"><div><div class="page-title" data-i18n="nav_create">미팅 등록</div><div class="page-sub" data-i18n="create_desc">새 미팅을 등록하고 참석자에게 알람을 발송합니다</div></div></div>
+        <div class="form-card">
+          <div class="form-card-title">📋 <span data-i18n="c_info">기본 정보</span></div>
+          <div class="form-row"><label class="form-label" data-i18n="c_title">미팅 제목 *</label><input class="form-input" id="f-title" placeholder="예: 2024 Q4 전략 회의" /></div>
+          <div class="form-row-2">
+            <div><label class="form-label" data-i18n="c_date">날짜 *</label><input class="form-input" type="date" id="f-date" /></div>
+            <div><label class="form-label" data-i18n="c_time">시간 *</label><input class="form-input" type="time" id="f-time" /></div>
+          </div>
+          <div class="form-row"><label class="form-label" data-i18n="c_loc">장소 *</label><input class="form-input" id="f-loc" placeholder="예: 3층 회의실 A" /></div>
+          <div class="form-row"><label class="form-label" data-i18n="c_agenda">미팅 안건</label><textarea class="form-input" id="f-agenda" rows="3" placeholder="• 주요 안건을 입력하세요"></textarea></div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="c_link">비대면 미팅 (링크)</label>
+            <input class="form-input" id="f-remote-link" placeholder="예: https://zoom.us/j/1234 또는 Google Meet 링크 입력" />
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">⏰ <span data-i18n="c_alarm">알람 설정</span></div>
+          <div class="form-row">
+            <label class="form-label" data-i18n="c_alarm1">1차 알람 (미팅 전)</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <div class="alarm-presets">
+                <button class="alarm-preset" onclick="setAlarmPreset(30,this)" data-i18n="a_30m">30분</button>
+                <button class="alarm-preset active" onclick="setAlarmPreset(60,this)" data-i18n="a_1h">1시간</button>
+                <button class="alarm-preset" onclick="setAlarmPreset(120,this)" data-i18n="a_2h">2시간</button>
+                <button class="alarm-preset" onclick="setAlarmPreset(1440,this)" data-i18n="a_1d">하루 전</button>
+              </div>
+              <div class="custom-min-wrap"><input type="number" id="custom-alarm-min" min="1" max="10080" value="60" oninput="setCustomAlarm(this.value)" /><span data-i18n="a_min">분</span></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);padding:8px 12px;background:var(--bg3);border-radius:8px;line-height:1.6;border:1px solid var(--border)">
+            📌 <span data-i18n="a_tip1">알람 3단계: </span><span style="color:var(--brand);font-weight:700" data-i18n="a_tip2">1차 알람</span> → <span style="color:var(--amber);font-weight:700" data-i18n="a_tip3">5분 전</span> → <span style="color:var(--green);font-weight:700" data-i18n="a_tip4">미팅 시작</span>
+          </div>
+        </div>
+        <div class="form-card">
+          <div class="form-card-title">👥 <span data-i18n="c_att">참석자 지정</span> <span style="font-size:12px;font-weight:500;color:var(--text3);margin-left:6px" data-i18n="c_att_sub">(개인 일정 시 생략 가능)</span></div>
+          <div class="picker-tabs">
+            <button class="picker-tab active" onclick="switchPickerTab('individual',this)" data-i18n="t_indiv">개별 추가</button>
+            <button class="picker-tab" onclick="switchPickerTab('dept',this)" data-i18n="t_dept">부서 전체</button>
+          </div>
+          <div id="picker-individual">
+            <div class="search-wrap">
+              <input class="form-input" id="attendee-search" placeholder="이름 검색..." oninput="searchAttendees(this.value)" autocomplete="off" />
+              <div class="search-dd" id="attendee-dd"></div>
+            </div>
+          </div>
+          <div id="picker-dept" style="display:none"><div class="dept-grid" id="dept-picker-chips"></div></div>
+          <div style="font-size:12px;color:var(--text3);margin:10px 0 4px;font-weight:600"><span data-i18n="c_sel_att">선택된 참석자 </span><span id="sel-count" style="color:var(--brand);font-weight:700">0</span><span data-i18n="c_p">명</span></div>
+          <div class="chips-wrap" id="sel-chips"></div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="submitMeeting()">✅ <span data-i18n="btn_submit">미팅 등록하기</span></button>
+        <div style="height:28px"></div>
+      </div>
+
+      <div class="page" id="page-recurring">
+        <div class="page-header">
+          <div>
+            <div class="page-title" data-i18n="nav_recurring">정기 미팅 관리</div>
+            <div class="page-sub" data-i18n="rec_desc">정기적인 회의 템플릿을 만들고 관리하세요.</div>
+          </div>
+          <button class="btn btn-primary" onclick="openRecModal()" data-i18n="btn_add_rec">＋ 새 정기 미팅 등록</button>
+        </div>
+        <div id="recurring-template-list" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:16px;"></div>
+        <div style="height:28px"></div>
+      </div>
+
+      <div class="page" id="page-schedules">
+        <div class="page-header">
+          <div>
+            <div class="page-title" data-i18n="sch_title">개인 및 팀 일정</div>
+            <div class="page-sub" data-i18n="sch_desc">자유롭게 일정을 메모하고 공유하세요. (날짜 클릭 시 상세보기 및 추가)</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;background:var(--bg4);border-radius:9px;padding:3px;border:1px solid var(--border)">
+              <button class="picker-tab" id="sch-filter-my" onclick="setSchFilter('my')" style="padding:5px 12px;font-size:16px" data-i18n="f_sch_my">내 일정</button>
+              <button class="picker-tab active" id="sch-filter-team" onclick="setSchFilter('team')" style="padding:5px 12px;font-size:16px" data-i18n="f_sch_team">팀 일정</button>
+              <div style="width:1px;background:var(--border2);margin:4px"></div>
+              <button class="picker-tab" id="sch-filter-all" onclick="setSchFilter('all')" style="padding:5px 12px;font-size:16px" data-i18n="f_sch_all">전체 일정</button>
+            </div>
+          </div>
+        </div>
+        <div class="cal-controls">
+          <button onclick="changeSchMonth(-1)">◀ <span data-i18n="cal_prev">이전달</span></button>
+          <span id="sch-month-label"></span>
+          <button onclick="changeSchMonth(1)"><span data-i18n="cal_next">다음달</span> ▶</button>
+        </div>
+        <div class="cal-grid" id="sch-cal-grid"></div>
+        <div style="height:28px"></div>
+      </div>
+
+      <div class="page" id="page-members">
+        <div class="page-header">
+          <div><div class="page-title" data-i18n="nav_members">구성원 관리</div><div class="page-sub" data-i18n="mem_desc">부서 및 직원을 관리합니다</div></div>
+          <button class="btn btn-primary btn-sm" id="btn-add-dept" onclick="openDeptModal()" style="display:none" data-i18n="btn_add_dept">＋ 부서 추가</button>
+        </div>
+        <div id="members-content"></div>
+        <div style="height:28px"></div>
+      </div>
+
+      <div class="page" id="page-settings">
+        <div class="page-header"><div><div class="page-title" data-i18n="nav_settings">연동 설정</div><div class="page-sub" data-i18n="set_desc">슬랙 연동을 설정합니다</div></div></div>
+        <div class="settings-panel">
+          <div class="sp-title">💜 Slack Incoming Webhook</div>
+          <div class="sp-desc" data-i18n="set_slack_desc">슬랙 채널에 미팅 알람을 자동으로 전송합니다.<br>슬랙 앱 → 채널 설정 → Incoming Webhooks에서 URL을 복사하세요.</div>
+          <div class="form-row"><label class="form-label">Webhook URL</label><input class="form-input" id="slack-url" placeholder="https://hooks.slack.com/services/..." /></div>
+          <div class="form-row"><label class="form-label" data-i18n="set_ch">채널</label><input class="form-input" id="slack-channel" placeholder="#미팅알람" /></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="saveSlack()" data-i18n="btn_save">저장</button>
+            <button class="btn btn-ghost btn-sm" onclick="testSlack()" data-i18n="btn_test">테스트</button>
+          </div>
+          <div id="slack-status"></div>
+        </div>
+        <div class="settings-panel">
+          <div class="sp-title">🌐 서버 정보</div>
+          <div class="sp-desc">현재 서버: <b id="server-info-text"></b></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="changeCompany()">🔁 그룹 변경 (초대코드 재입력)</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="today-modal-overlay">
+  <div class="modal" style="max-width:500px; text-align:left; max-height:85vh; overflow-y:auto;">
+    <div style="font-size:18px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+      <span id="today-modal-title" data-i18n="nav_today">오늘 내 일정</span>
+      <span id="today-modal-date" style="color:var(--brand);font-size:14px;"></span>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;" data-i18n="today_meetings">📅 오늘의 미팅</div>
+    <div id="today-meetings-list" style="margin-bottom:20px;display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;" data-i18n="today_schedules">📝 오늘의 일정</div>
+    <div id="today-schedules-list" style="margin-bottom:20px;display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:12px;">💡 항목을 클릭하면 완료(취소선) 처리됩니다.</div>
+    <button class="btn btn-ghost btn-full" onclick="closeTodayModal()" data-i18n="btn_close">닫기</button>
+  </div>
+</div>
+
+<div class="overlay" id="alarm-overlay">
+  <div class="modal" id="alarm-modal">
+    <span class="alarm-glyph" id="alarm-glyph">📅</span>
+    <div id="alarm-type-badge" style="text-align:center;margin-bottom:10px"></div>
+    <div id="alarm-modal-title" style="font-size:20px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text)"></div>
+    <div id="alarm-modal-meeting" style="font-size:15px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text2)"></div>
+    <div id="alarm-modal-detail" style="font-size:13px;color:var(--text3);text-align:center;line-height:1.7;margin-bottom:22px"></div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-ghost" onclick="dismissAlarm()" data-i18n="btn_ok">확인</button>
+      <button class="btn btn-primary" onclick="dismissAlarm();goto('dashboard')" data-i18n="btn_go_dash">대시보드 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="minutes-modal-overlay">
+  <div class="modal minutes-lg">
+    <div id="minutes-modal-title" style="font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)" data-i18n="min_title">회의록 작성</div>
+    <div id="minutes-modal-subtitle" style="font-size:13px;color:var(--text3);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)"></div>
+    <input type="hidden" id="minutes-meeting-id">
+    <input type="hidden" id="minutes-edit-id">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;" data-i18n="min_history">전체 회의록 기록</div>
+    <div class="min-history-list" id="minutes-history-list"></div>
+    <div style="font-size:12px;font-weight:700;color:var(--brand);margin-bottom:8px;margin-top:10px;" data-i18n="min_my_record">회의록 작성 (새로 적으면 하단에 추가됩니다)</div>
+    <textarea class="form-input" id="minutes-content" placeholder="이곳에 회의 주요 내용 및 결정 사항을 작성해 주세요." style="min-height:120px"></textarea>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeMinutesModal()" data-i18n="btn_close">닫기</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveMinutes()" data-i18n="btn_save_min">회의록 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="dept-modal">
+  <div class="modal" style="text-align:left;max-width:370px">
+    <div id="dept-modal-title" style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text)" data-i18n="m_dept_add">부서 추가</div>
+    <div class="form-row"><label class="form-label" data-i18n="m_dept_name">부서 이름 *</label><input class="form-input" id="dept-name-input" placeholder="예: 마케팅팀" /></div>
+    <div class="form-row">
+      <label class="form-label" data-i18n="m_color">색상</label>
+      <div style="display:flex;gap:7px;flex-wrap:wrap" id="color-swatches">
+        <div class="color-swatch active" data-color="#1BB5B8" style="background:#1BB5B8" onclick="pickColor(this,'#1BB5B8')"></div>
+        <div class="color-swatch" data-color="#22c55e" style="background:#22c55e" onclick="pickColor(this,'#22c55e')"></div>
+        <div class="color-swatch" data-color="#f59e0b" style="background:#f59e0b" onclick="pickColor(this,'#f59e0b')"></div>
+        <div class="color-swatch" data-color="#ef4444" style="background:#ef4444" onclick="pickColor(this,'#ef4444')"></div>
+        <div class="color-swatch" data-color="#a78bfa" style="background:#a78bfa" onclick="pickColor(this,'#a78bfa')"></div>
+      </div>
+    </div>
+    <input type="hidden" id="dept-color-val" value="#1BB5B8" /><input type="hidden" id="dept-edit-id" value="" />
+    <div style="display:flex;gap:8px;margin-top:18px"><button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeDeptModal()" data-i18n="btn_cancel">취소</button><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveDept()" data-i18n="btn_save">저장</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="member-modal">
+  <div class="modal" style="text-align:left;max-width:370px">
+    <div id="member-modal-title" style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--text)" data-i18n="m_emp_add">직원 추가</div>
+    <div class="form-row"><label class="form-label" data-i18n="m_emp_name">이름 *</label><input class="form-input" id="member-name-input" placeholder="이름 입력" /></div>
+    <div class="form-row"><label class="form-label" data-i18n="m_emp_dept">부서 *</label><select class="form-input" id="member-dept-sel"></select></div>
+    <div class="form-row"><label class="form-label" data-i18n="m_emp_pw">비밀번호 * (4자 이상)</label><input class="form-input" type="password" id="member-pw-input" placeholder="초기 비밀번호 설정" /></div>
+    <input type="hidden" id="member-edit-name" value="" />
+    <div style="display:flex;gap:8px;margin-top:18px"><button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeMemberModal()" data-i18n="btn_cancel">취소</button><button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveMember()" data-i18n="btn_save">저장</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="daily-view-overlay">
+  <div class="modal" style="text-align:left;max-width:500px; max-height:90vh; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border)">
+      <div id="daily-view-title" style="font-size:18px;font-weight:700;color:var(--text)"></div>
+      <button class="btn btn-primary btn-sm" onclick="openAddSchFromDaily()">＋ <span data-i18n="btn_add_new_sch">새 일정 등록</span></button>
+    </div>
+    <input type="hidden" id="daily-view-date">
+    <div class="dv-list" id="daily-view-list"></div>
+    <div style="margin-top:auto; padding-top:16px;">
+      <button class="btn btn-ghost btn-full" onclick="closeDailyViewModal()" data-i18n="btn_close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="add-sch-overlay">
+  <div class="modal" style="text-align:left;max-width:450px">
+    <div id="add-sch-title" style="font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)" data-i18n="modal_sch_title">일정 등록</div>
+    <div id="add-sch-date-label" style="font-size:13px;color:var(--brand);font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)"></div>
+    <input type="hidden" id="add-sch-date">
+    <div class="form-row">
+      <label class="form-label" data-i18n="sch_ph_label">일정 내용 *</label>
+      <textarea class="form-input" id="add-sch-content" placeholder="자유롭게 일정을 메모하세요." style="min-height:100px"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeSchModal()" data-i18n="btn_cancel">취소</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveSchedule()" data-i18n="btn_save_sch">일정 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="recurring-modal-overlay">
+  <div class="modal" style="max-width:550px; text-align:left; max-height:85vh; overflow-y:auto;">
+    <div id="rec-modal-title" style="font-size:18px;font-weight:700;margin-bottom:15px;color:var(--text)" data-i18n="rec_title">정기 미팅 등록</div>
+    <div class="form-row"><label class="form-label" data-i18n="c_title">미팅 제목 *</label><input class="form-input" id="rf-title" /></div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label" data-i18n="rec_freq">반복 주기</label>
+        <select class="form-input" id="rf-freq" onchange="toggleRecTypeUI()">
+          <option value="weekly" data-i18n="rec_weekly">매주 (Weekly)</option>
+          <option value="biweekly" data-i18n="rec_biweekly">2주마다 (Bi-weekly)</option>
+          <option value="monthly" data-i18n="rec_monthly">매월 (Monthly)</option>
+        </select>
+      </div>
+      <div><label class="form-label" data-i18n="c_time">기본 시간 *</label><input class="form-input" type="time" id="rf-time" /></div>
+    </div>
+    
+    <div id="ui-weekly" class="form-row">
+      <label class="form-label" data-i18n="rec_day_sel">요일 선택</label>
+      <div class="day-selector" id="rf-days">
+        <div class="day-dot" data-day="1">월</div><div class="day-dot" data-day="2">화</div>
+        <div class="day-dot" data-day="3">수</div><div class="day-dot" data-day="4">목</div>
+        <div class="day-dot" data-day="5">금</div><div class="day-dot" data-day="6">토</div>
+        <div class="day-dot" data-day="0">일</div>
+      </div>
+    </div>
+
+    <div id="ui-monthly" class="form-row" style="display:none">
+      <label class="form-label" data-i18n="rec_month_rule">상세 설정</label>
+      <select class="form-input" id="rf-month-rule">
+        <option value="1">첫 번째 요일</option><option value="2">두 번째 요일</option>
+        <option value="3">세 번째 요일</option><option value="4">네 번째 요일</option>
+        <option value="last">마지막 요일</option>
+      </select>
+    </div>
+
+    <div class="form-row"><label class="form-label" data-i18n="c_loc">기본 장소 *</label><input class="form-input" id="rf-loc" /></div>
+    
+    <div class="form-row" style="margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
+      <label class="form-label" data-i18n="c_att">참석자 지정</label>
+      <div class="picker-tabs">
+        <button class="picker-tab active" onclick="switchRecPickerTab('individual',this)" data-i18n="t_indiv">개별 추가</button>
+        <button class="picker-tab" onclick="switchRecPickerTab('dept',this)" data-i18n="t_dept">부서 전체</button>
+      </div>
+      <div id="rec-picker-individual">
+        <div class="search-wrap">
+          <input class="form-input" id="rec-attendee-search" placeholder="이름 검색..." oninput="searchRecAttendees(this.value)" autocomplete="off" />
+          <div class="search-dd" id="rec-attendee-dd"></div>
+        </div>
+      </div>
+      <div id="rec-picker-dept" style="display:none"><div class="dept-grid" id="rec-dept-picker-chips"></div></div>
+      <div style="font-size:12px;color:var(--text3);margin:10px 0 4px;font-weight:600"><span data-i18n="c_sel_att">선택된 참석자 </span><span id="rec-sel-count" style="color:var(--brand);font-weight:700">0</span><span data-i18n="c_p">명</span></div>
+      <div class="chips-wrap" id="rec-sel-chips"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeRecModal()" data-i18n="btn_cancel">취소</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveRecurringTemplate()" data-i18n="btn_save">템플릿 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="override-modal-overlay">
+  <div class="modal" style="max-width:450px; text-align:left;">
+    <div style="font-size:17px;font-weight:700;margin-bottom:5px;" data-i18n="rec_override_title">✏️ 이번 회차만 수정</div>
+    <div id="override-date-info" style="font-size:13px; color:var(--brand); margin-bottom:15px; font-weight:600;"></div>
+    
+    <div class="form-row-2">
+      <div><label class="form-label" data-i18n="c_date">이번 회차 날짜</label><input class="form-input" type="date" id="of-date" /></div>
+      <div><label class="form-label" data-i18n="c_time">이번 회차 시간</label><input class="form-input" type="time" id="of-time" /></div>
+    </div>
+    <div class="form-row"><label class="form-label" data-i18n="c_loc">이번 회차 장소</label><input class="form-input" id="of-loc" /></div>
+    <div class="form-row"><label class="form-label" data-i18n="c_agenda">이번 회차 안건</label><textarea class="form-input" id="of-agenda"></textarea></div>
+    <div class="form-row" style="display:flex; align-items:center; gap:8px; background:var(--red-bg); padding:10px; border-radius:8px;">
+      <input type="checkbox" id="of-cancel" style="width:18px;height:18px;cursor:pointer;">
+      <label for="of-cancel" style="color:var(--red); font-weight:700; font-size:13px; cursor:pointer;" data-i18n="rec_skip">이번 회차 미팅 취소 (건너뛰기)</label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeOverrideModal()" data-i18n="btn_close">닫기</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveOverride()" data-i18n="btn_save">적용하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="switch-modal" style="display:none"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// I18N (다국어)
+// ═══════════════════════════════════════════════
+const I18N = {
+  ko: {
+    server_setup:"서버 연결 설정", server_ip_desc:"서버 PC의 IP 주소를 입력하세요", server_ip_label:"서버 IP 주소",
+    server_tip_1:"💡 서버 PC에서 <b>서버시작.bat</b>을 실행하면", server_tip_2:"화면에 IP 주소가 표시됩니다",
+    btn_connect:"연결하기", sys_desc:"미팅 알람 시스템", tab_login:"로그인", tab_register:"회원가입",
+    label_name:"이름", label_pw:"비밀번호", btn_login:"로그인", no_account:"계정이 없으신가요?",
+    change_server:"서버 주소 변경", label_name_req:"이름 *", label_dept_req:"부서 *", label_pw_req:"비밀번호 * (4자 이상)",
+    label_pw_conf:"비밀번호 확인 *", btn_register:"가입하기", nav_menu:"메뉴", nav_dash:"대시보드",
+    nav_create:"미팅 등록", nav_members:"구성원 관리", nav_settings:"연동 설정", conn_wait:"연결 중...",
+    btn_logout:"🚪 로그아웃", filter_mine:"내 미팅만", filter_all:"전체 보기", view_cal:"캘린더 보기",
+    btn_show_hid:"👁 숨긴 미팅", stat_total:"전체 미팅", stat_up:"예정 미팅", stat_live:"진행중 미팅",
+    stat_today:"오늘 미팅", stat_wait:"대기 알람", cal_prev:"이전달", cal_next:"다음달",
+    create_desc:"새 미팅을 등록하고 참석자에게 알람을 발송합니다", c_info:"기본 정보", c_title:"미팅 제목 *",
+    c_date:"날짜 *", c_time:"시간 *", c_loc:"장소 *", c_agenda:"미팅 안건", c_link:"비대면 미팅 (링크)",
+    c_alarm:"알람 설정", c_alarm1:"1차 알람 (미팅 전)", a_30m:"30분", a_1h:"1시간", a_2h:"2시간", a_1d:"하루 전",
+    a_min:"분", a_tip1:"알람 3단계: ", a_tip2:"1차 알람", a_tip3:"5분 전", a_tip4:"미팅 시작",
+    c_att:"참석자 지정", c_att_sub:"(개인 일정 시 생략 가능)", t_indiv:"개별 추가", t_dept:"부서 전체",
+    c_sel_att:"선택된 참석자 ", c_p:"명", btn_submit:"미팅 등록하기", mem_desc:"부서 및 직원을 관리합니다",
+    btn_add_dept:"＋ 부서 추가", set_desc:"슬랙 연동을 설정합니다", set_slack_desc:"슬랙 채널에 미팅 알람을 자동으로 전송합니다.<br>슬랙 앱 → 채널 설정 → Incoming Webhooks에서 URL을 복사하세요.",
+    set_ch:"채널", btn_save:"저장", btn_test:"테스트", set_srv:"서버 정보", btn_ok:"확인", btn_go_dash:"대시보드 →",
+    min_title:"회의록 작성", min_author:"작성자", min_content:"회의 내용 기록 (Minutes) *", btn_close:"닫기",
+    btn_save_min:"회의록 저장", m_dept_add:"부서 추가", m_dept_name:"부서 이름 *", m_color:"색상", btn_cancel:"취소",
+    m_emp_add:"직원 추가", m_emp_name:"이름 *", m_emp_dept:"부서 *", m_emp_pw:"비밀번호 * (4자 이상)",
+    btn_min_view:"📝 회의록 보기", btn_min_write:"📝 회의록 작성",
+    nav_schedules:"개인 및 팀 일정", sch_title:"개인 및 팀 일정", sch_desc:"자유롭게 일정을 메모하고 공유하세요. (날짜 클릭 시 상세보기 및 추가)",
+    f_sch_my:"내 일정", f_sch_team:"팀 일정", f_sch_all:"전체 일정", modal_sch_title:"일정 등록",
+    sch_ph_label:"일정 내용 *", btn_save_sch:"일정 저장", btn_add_new_sch:"새 일정 등록",
+    min_history:"전체 회의록 기록", min_my_record:"회의록 작성 (새로 적으면 하단에 추가됩니다)",
+    nav_today: "오늘 내 일정", today_meetings: "📅 오늘의 미팅", today_schedules: "📝 오늘의 메모 일정", today_empty: "예정된 항목이 없습니다",
+    nav_recurring: "정기 미팅 관리", rec_desc: "정기적인 회의 템플릿을 만들고 관리하세요.", btn_add_rec: "＋ 새 정기 미팅 등록", rec_title: "정기 미팅 등록", rec_freq: "반복 주기", rec_weekly: "매주 (Weekly)", rec_biweekly: "2주마다 (Bi-weekly)", rec_monthly: "매월 (Monthly)", rec_day_sel: "요일 선택", rec_month_rule: "상세 설정", rec_override_title: "✏️ 이번 회차만 수정", rec_skip: "이번 회차 미팅 취소 (건너뛰기)"
+  },
+  en: {
+    server_setup:"Server Setup", server_ip_desc:"Enter Server PC IP", server_ip_label:"Server IP",
+    server_tip_1:"💡 Run <b>server_start.bat</b> on PC", server_tip_2:"to see the IP address",
+    btn_connect:"Connect", sys_desc:"Meeting Alarm System", tab_login:"Login", tab_register:"Register",
+    label_name:"Name", label_pw:"Password", btn_login:"Login", no_account:"No account?",
+    change_server:"Change Server", label_name_req:"Name *", label_dept_req:"Department *", label_pw_req:"Password * (min 4)",
+    label_pw_conf:"Confirm Password *", btn_register:"Register", nav_menu:"MENU", nav_dash:"Dashboard",
+    nav_create:"Schedule Meeting", nav_members:"Members", nav_settings:"Settings", conn_wait:"Connecting...",
+    btn_logout:"🚪 Logout", filter_mine:"My Meetings", filter_all:"All Meetings", view_cal:"Calendar View",
+    btn_show_hid:"👁 Hidden Meetings", stat_total:"Total", stat_up:"Upcoming", stat_live:"Live",
+    stat_today:"Today", stat_wait:"Pending", cal_prev:"Prev", cal_next:"Next",
+    create_desc:"Schedule new meetings & notify attendees", c_info:"Basic Info", c_title:"Meeting Title *",
+    c_date:"Date *", c_time:"Time *", c_loc:"Location *", c_agenda:"Agenda", c_link:"Remote Link",
+    c_alarm:"Alarm Setup", c_alarm1:"1st Alarm (Before)", a_30m:"30m", a_1h:"1h", a_2h:"2h", a_1d:"1 Day",
+    a_min:"min", a_tip1:"3 Steps: ", a_tip2:"1st Alarm", a_tip3:"5m Before", a_tip4:"Start",
+    c_att:"Add Attendees", c_att_sub:"(Optional for personal)", t_indiv:"Individual", t_dept:"By Dept",
+    c_sel_att:"Selected: ", c_p:"person(s)", btn_submit:"Register Meeting", mem_desc:"Manage Depts & Staff",
+    btn_add_dept:"＋ Add Dept", set_desc:"Slack Integration", set_slack_desc:"Auto-send alarms to Slack.<br>Copy URL from Incoming Webhooks.",
+    set_ch:"Channel", btn_save:"Save", btn_test:"Test", set_srv:"Server Info", btn_ok:"OK", btn_go_dash:"Dashboard →",
+    min_title:"Meeting Minutes", min_author:"Author", min_content:"Minutes Content *", btn_close:"Close",
+    btn_save_min:"Save Minutes", m_dept_add:"Add Dept", m_dept_name:"Dept Name *", m_color:"Color", btn_cancel:"Cancel",
+    m_emp_add:"Add Staff", m_emp_name:"Name *", m_emp_dept:"Dept *", m_emp_pw:"Password * (min 4)",
+    btn_min_view:"📝 View Minutes", btn_min_write:"📝 Write Minutes",
+    nav_schedules:"Personal & Team Schedules", sch_title:"Personal & Team Schedules", sch_desc:"Free memo schedules. Click date for details.",
+    f_sch_my:"My Schedule", f_sch_team:"Team Schedule", f_sch_all:"All Schedules", modal_sch_title:"Add Schedule",
+    sch_ph_label:"Schedule Content *", btn_save_sch:"Save", btn_add_new_sch:"New Schedule",
+    min_history:"Minutes History", min_my_record:"Write Minutes (Appends as a new block)",
+    nav_today: "Today's Schedule", today_meetings: "📅 Today's Meetings", today_schedules: "📝 Today's Memos", today_empty: "Nothing scheduled for today",
+    nav_recurring: "Recurring Meetings", rec_desc: "Create and manage recurring meeting templates.", btn_add_rec: "＋ New Recurring Meeting", rec_title: "Recurring Meeting Setup", rec_freq: "Frequency", rec_weekly: "Weekly", rec_biweekly: "Bi-weekly", rec_monthly: "Monthly", rec_day_sel: "Select Days", rec_month_rule: "Monthly Rule", rec_override_title: "✏️ Modify This Instance", rec_skip: "Skip this meeting (Cancel)"
+  }
+};
+
+let g_lang = localStorage.getItem('ma_lang') || 'ko';
+
+function toggleLang() { g_lang = g_lang === 'ko' ? 'en' : 'ko'; localStorage.setItem('ma_lang', g_lang); applyLang(); }
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(I18N[g_lang][key]) el.innerHTML = I18N[g_lang][key]; });
+  const btn = document.getElementById('lang-toggle-btn'); if(btn) btn.innerHTML = g_lang === 'ko' ? '🌐 English Mode' : '🌐 한국어 모드';
+  if(S.meetings) renderDashboard(); 
+  if(document.getElementById('page-schedules').classList.contains('active')) renderSchCalendar();
+}
+
+window.addEventListener('DOMContentLoaded', () => { const current = document.documentElement.getAttribute('data-theme'); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = current === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; });
+function toggleTheme() { const current = document.documentElement.getAttribute('data-theme'); const next = current === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('ma_theme', next); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = next === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; }
+
+let ipcRenderer;
+try { const {ipcRenderer:ipc}=require('electron'); ipcRenderer=ipc; } catch(e){ ipcRenderer=null; }
+function sendIpc(ch,d){ if(ipcRenderer) ipcRenderer.send(ch,d); }
+async function invokeIpc(ch,d){ if(ipcRenderer) return ipcRenderer.invoke(ch,d); return null; }
+function openExternalLink(url) { if(!url) return; const full = url.startsWith('http') ? url : 'https://' + url; sendIpc('open-external', full); if(!ipcRenderer) window.open(full, '_blank'); }
+
+// ═══════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════
+let S = { 
+  serverUrl: '', currentUser: '', currentDeptId: '',
+  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID
+  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  recurringTemplates: [],
+  recurringOverrides: {},
+  recurringCompleted: []
+};
+
+let selectedRecAttendees = []; // 정기 미팅용 분리
+
+function saveHiddenIds() { try { localStorage.setItem('ma_hidden_ids', JSON.stringify([...S.hiddenIds])); } catch(e) {} }
+function loadHiddenIds() { try { const data = localStorage.getItem('ma_hidden_ids'); if(data) S.hiddenIds = new Set(JSON.parse(data)); } catch(e) { S.hiddenIds = new Set(); } }
+
+let ws = null; let alarmTimers = []; let showHidden = false; let calDate = new Date(); let schCalDate = new Date();
+
+// ★ 서버 URL 고정 (Render 배포 후 실제 주소로 교체)
+const SERVER_URL = 'https://meetalarm.onrender.com';
+
+async function api(method, path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (S.companyId) headers['x-company-id'] = S.companyId;
+  try {
+    const res = await fetch(`${SERVER_URL}/api${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    return res.json();
+  } catch(e) { throw e; }
+}
+function badge(color, text) { return `<span class="badge badge-${color}">${text}</span>`; }
+function fmtDt(d) { const dt = new Date(d), p=n=>String(n).padStart(2,'0'); const days=['일','월','화','수','목','금','토']; return `${dt.getFullYear()}.${p(dt.getMonth()+1)}.${p(dt.getDate())} (${days[dt.getDay()]}) ${p(dt.getHours())}:${p(dt.getMinutes())}`; }
+function getCountdown(ms) { const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return h>0 ? `${h}시간 ${m}분 후` : `${m}분 후`; }
+function getDeptColor(deptId) { const d = S.depts.find(x=>x.id===deptId); return d ? d.color : '#1BB5B8'; }
+function getUserDept(name) { const u = S.users.find(x=>x.name===name); return u ? u.dept_id : ''; }
+function toast(msg, type='success') { const c=document.getElementById('toasts'); const t=document.createElement('div'); t.className=`toast ${type}`; t.innerHTML=`<span style="font-size:15px">${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`; c.appendChild(t); setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(110%)';t.style.transition='all .3s';setTimeout(()=>t.remove(),300);},3500); }
+function emptyState(icon,text,sub='') { return `<div class="empty" style="grid-column: 1 / -1;"><div class="empty-icon">${icon}</div><div class="empty-text">${text}</div><div style="font-size:13px">${sub}</div></div>`; }
+
+function isVisible(m, cu) { 
+  if (!m.attendees || m.attendees.length === 0) return m.organizer === cu; 
+  return true; 
+}
+
+function isAttending(m, name) { 
+  if(!m.attendees || m.attendees.length === 0) return m.organizer === name; 
+  return m.attendees.some(a=>(a.user_name||a)===name && !a.left_meeting) || m.organizer===name; 
+}
+
+async function boot() {
+  // ★ 서버 URL 고정이라 IP 입력 불필요, 바로 회사 설정으로
+  S.serverUrl = SERVER_URL.replace('https://', '').replace('http://', '');
+
+  if (!S.companyId) { showCompanySetup(); applyLang(); return; }
+
+  await loadDepts().catch(()=>{});
+  await loadUsers().catch(()=>{});
+  loadHiddenIds();
+  const autoUser = localStorage.getItem('ma_user');
+  if (autoUser && S.users.find(u=>u.name===autoUser)) { 
+    enterApp(autoUser); 
+  } else { 
+    showAuthScreen(); 
+  }
+  applyLang();
+}
+
+// ★ 추가: 회사 설정 화면 함수들
+function showCompanySetup() {
+  document.getElementById('server-setup').style.display = 'none';
+  document.getElementById('company-setup').style.display = 'flex';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showCoTab(tab) {
+  document.getElementById('co-join').style.display = tab === 'join' ? 'block' : 'none';
+  document.getElementById('co-create').style.display = tab === 'create' ? 'block' : 'none';
+  document.getElementById('tab-join-btn').classList.toggle('active', tab === 'join');
+  document.getElementById('tab-create-btn').classList.toggle('active', tab === 'create');
+}
+
+async function checkInviteCode() {
+  const code = document.getElementById('invite-code-input').value.trim().toUpperCase();
+  if (!code) return alert('코드를 입력하세요');
+  try {
+    const res = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r => r.json());
+    if (res.error) return alert('유효하지 않은 초대코드입니다');
+    S.companyId = res.id;
+    localStorage.setItem('ma_company_id', res.id);
+    await loadDepts().catch(()=>{});
+    await loadUsers().catch(()=>{});
+    showAuthScreen();
+  } catch(e) { alert('서버 연결 오류'); }
+}
+
+async function createNewCompany() {
+  const name = document.getElementById('new-company-name').value.trim();
+  if (!name) return alert('회사명을 입력하세요');
+  const btn = document.getElementById('btn-create-co');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${SERVER_URL}/api/company/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyName: name })
+    }).then(r => r.json());
+    S.companyId = res.companyId;
+    localStorage.setItem('ma_company_id', res.companyId);
+    alert(`✅ 회사 등록 성공!\n\n초대 코드: ${res.inviteCode}\n\n이 코드를 동료들에게 공유하세요.`);
+    await loadDepts().catch(()=>{});
+    await loadUsers().catch(()=>{});
+    showAuthScreen();
+  } catch(e) { alert('오류가 발생했습니다'); }
+  finally { btn.disabled = false; }
+}
+
+function changeCompany() { localStorage.removeItem('ma_company_id'); location.reload(); }
+
+async function loadSchedules() { try { S.schedules = await api('GET', '/schedules') || []; } catch(e) { S.schedules = []; } loadHiddenIds(); }
+async function loadRecurring() {
+  try {
+    const res = await api('GET', '/recurring');
+    S.recurringTemplates = res.templates || [];
+    S.recurringOverrides = res.overrides || {};
+    S.recurringCompleted = res.completed || [];
+  } catch(e) {
+    S.recurringTemplates = []; S.recurringOverrides = {}; S.recurringCompleted = [];
+  }
+}
+
+function showCompanySetup() {
+  document.getElementById('company-setup').style.display = 'flex';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+}
+function changeServer() { localStorage.clear(); location.reload(); }
+function showAuthScreen() { document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='flex'; document.getElementById('main-app').style.display='none'; buildLoginSelect(); buildRegDeptSelect(); }
+function showAuthTab(tab) { document.getElementById('tab-login').style.display = tab==='login'?'block':'none'; document.getElementById('tab-reg').style.display = tab==='register'?'block':'none'; document.getElementById('tab-login-btn').classList.toggle('active', tab==='login'); document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register'); }
+function buildLoginSelect() { const sel=document.getElementById('login-name'); sel.innerHTML=S.users.map(u=>`<option value="${u.name}">${u.name} (${S.depts.find(d=>d.id===u.dept_id)?.name||u.dept_id})</option>`).join(''); }
+function buildRegDeptSelect() { 
+  const sel=document.getElementById('reg-dept'); 
+  if(!S.depts.length) { 
+    sel.innerHTML=`<option value="">-- 부서 없음 (관리자가 추가 예정) --</option>`; 
+  } else { 
+    sel.innerHTML=S.depts.map(d=>`<option value="${d.id}">${d.name}</option>`).join(''); 
+  }
+  const sel2=document.getElementById('member-dept-sel'); if(sel2) sel2.innerHTML=sel.innerHTML; 
+}
+
+async function doLogin() {
+  const name=document.getElementById('login-name').value; const pw=document.getElementById('login-pw').value; const errEl=document.getElementById('login-err');
+  if(!pw){ errEl.textContent='비밀번호를 입력하세요'; errEl.classList.add('show'); return; }
+  // ★ 수정: pw 필드명 및 companyId 전송
+  const r = await api('POST','/login',{name, pw, companyId: S.companyId});
+  if(r.error){ errEl.textContent=r.error; errEl.classList.add('show'); return; }
+  errEl.classList.remove('show'); localStorage.setItem('ma_user', name); enterApp(name);
+}
+
+async function doRegister() {
+  const name=document.getElementById('reg-name').value.trim(); const deptId=document.getElementById('reg-dept').value || ''; const pw=document.getElementById('reg-pw').value; const pw2=document.getElementById('reg-pw2').value;
+  const errEl=document.getElementById('reg-err'); const okEl=document.getElementById('reg-ok');
+  if(!name){ errEl.textContent='이름을 입력하세요'; errEl.classList.add('show'); return; }
+  if(pw.length<4){ errEl.textContent='비밀번호는 4자 이상'; errEl.classList.add('show'); return; }
+  if(pw!==pw2){ errEl.textContent='비밀번호가 일치하지 않습니다'; errEl.classList.add('show'); return; }
+  errEl.classList.remove('show');
+  // ★ 수정: pw 필드명 및 companyId 전송
+  const r = await api('POST','/register',{name, deptId, pw, companyId: S.companyId});
+  if(r.error){ errEl.textContent=r.error; errEl.classList.add('show'); return; }
+  await loadUsers(); buildLoginSelect(); okEl.textContent=`${name}님 가입 완료! 로그인해주세요`; okEl.classList.add('show'); showAuthTab('login'); document.getElementById('login-name').value=name;
+}
+
+function doLogout() { localStorage.removeItem('ma_user'); if(ws) ws.close(); location.reload(); }
+
+async function enterApp(userName) {
+  S.currentUser = userName; const user = S.users.find(u=>u.name===userName); S.currentDeptId = user ? user.dept_id : '';
+  document.getElementById('server-setup').style.display='none'; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='flex';
+  const dept = S.depts.find(d=>d.id===S.currentDeptId);
+  document.getElementById('sidebar-name').textContent = userName; document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
+  S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
+  const now = new Date(); const days=['일','월','화','수','목','금','토'];
+  document.getElementById('dash-greeting').textContent=`안녕하세요, ${userName}님 👋`; document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+  
+  await loadMeetings(); 
+  await loadSchedules();
+  await loadRecurring();
+  
+  buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
+  if (S.currentUser === '강승윤') { document.getElementById('btn-add-dept').style.display = 'inline-block'; }
+}
+
+function connectWS() {
+  if(ws) ws.close();
+  const wsUrl = SERVER_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+  ws = new WebSocket(wsUrl);
+  ws.onopen = () => { ws.send(JSON.stringify({event:'auth', name:S.currentUser, companyId:S.companyId})); setConnStatus(true); };
+  ws.onmessage = async (e) => {
+    const msg = JSON.parse(e.data);
+    if(msg.event==='meeting_created'||msg.event==='meeting_updated') { const idx = S.meetings.findIndex(m=>m.id===msg.data.id); if(idx>=0) S.meetings[idx]=msg.data; else S.meetings.push(msg.data); renderDashboard(); updateBadges(); }
+    if(msg.event==='meeting_deleted') { S.meetings = S.meetings.filter(m=>String(m.id)!==String(msg.data.id)); renderDashboard(); updateBadges(); }
+    if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
+    if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
+    if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
+    if(msg.event==='recurring_updated') { await loadRecurring(); renderRecurringTemplates(); renderDashboard(); }
+  };
+  ws.onclose = () => { setConnStatus(false); setTimeout(connectWS, 3000); }; ws.onerror = () => setConnStatus(false);
+}
+
+function setConnStatus(online) { const bar=document.getElementById('conn-status-bar'); const txt=document.getElementById('conn-text'); bar.className='conn-status '+(online?'online':'offline'); txt.innerHTML=online ? I18N[g_lang].conn_wait.replace('...', '됨') : I18N[g_lang].conn_wait; }
+
+async function loadDepts()    { S.depts    = await api('GET','/departments'); }
+async function loadUsers()    { S.users    = await api('GET','/users'); }
+async function loadMeetings() { 
+  S.meetings = await api('GET','/meetings'); 
+  const localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
+  
+  S.meetings.forEach(m => { 
+    if(localMin[m.id] && localMin[m.id].minutes_list) { 
+      m.minutes_list = localMin[m.id].minutes_list.map(h => ({...h, id: h.id || 'min_'+Math.random().toString(36).substr(2,9)})); 
+    } else if(localMin[m.id] && localMin[m.id].minutes) {
+      m.minutes_list = [{ id: 'min_'+Math.random().toString(36).substr(2,9), author: localMin[m.id].minutes_author || m.organizer, content: localMin[m.id].minutes, updated_at: new Date().toISOString() }];
+    }
+  });
+}
+
+function goto(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active'); document.getElementById('nav-'+id).classList.add('active');
+  if(id==='dashboard') renderDashboard(); 
+  if(id==='schedules') renderSchCalendar(); 
+  if(id==='members') renderMembers(); 
+  if(id==='settings') loadSettingsPage();
+  if(id==='recurring') renderRecurringTemplates();
+}
+
+function setFilter(f) {
+  S.viewFilter=f; S.viewMode='list'; document.getElementById('filter-mine').classList.toggle('active',f==='mine'); document.getElementById('filter-all').classList.toggle('active',f==='all'); document.getElementById('view-calendar').classList.remove('active');
+  document.getElementById('list-view').style.display='block'; document.getElementById('calendar-view').style.display='none'; renderDashboard();
+}
+
+function setViewMode(mode) {
+  if(mode === 'calendar') { S.viewMode = 'calendar'; document.getElementById('filter-mine').classList.remove('active'); document.getElementById('filter-all').classList.remove('active'); document.getElementById('view-calendar').classList.add('active'); document.getElementById('list-view').style.display = 'none'; document.getElementById('calendar-view').style.display = 'block'; renderCalendar(); }
+}
+
+function toggleShowHidden() { showHidden=!showHidden; const t = I18N[g_lang].btn_show_hid; document.getElementById('btn-show-hidden').textContent=showHidden ? `👁 ${g_lang==='ko'?'숨김 끄기':'Hide Hidden'}` : `👁 ${t}`; renderDashboard(); }
+async function hideMeeting(id) { 
+  S.hiddenIds.add(String(id)); saveHiddenIds();
+  try { await api('PUT', `/meetings/${id}/hide`); } catch(e) {}
+  renderDashboard(); toast(g_lang==='ko'?'숨겼습니다':'Hidden','info'); 
+}
+async function unhideMeeting(id) { 
+  S.hiddenIds.delete(String(id)); saveHiddenIds(); 
+  try { await api('PUT', `/meetings/${id}/unhide`); } catch(e) {}
+  renderDashboard(); toast(g_lang==='ko'?'숨기기가 취소되었습니다':'Unhidden','info'); 
+}
+
+// ═══════════════════════════════════════════════
+// 🔴 1. 정기 미팅 엔진 및 대시보드 렌더링 
+// ═══════════════════════════════════════════════
+function toggleRecTypeUI() {
+  const freq = document.getElementById('rf-freq').value;
+  document.getElementById('ui-weekly').style.display = (freq==='weekly'||freq==='biweekly')?'block':'none';
+  document.getElementById('ui-monthly').style.display = (freq==='monthly')?'block':'none';
+}
+
+document.querySelectorAll('.day-dot').forEach(dot => {
+  dot.onclick = () => dot.classList.toggle('active');
+});
+
+function openRecModal() { 
+    selectedRecAttendees = []; renderRecSelChips(); 
+    document.getElementById('recurring-modal-overlay').classList.add('show'); 
+}
+function closeRecModal() { document.getElementById('recurring-modal-overlay').classList.remove('show'); }
+
+async function saveRecurringTemplate() {
+  const title = document.getElementById('rf-title').value.trim();
+  const freq = document.getElementById('rf-freq').value;
+  const time = document.getElementById('rf-time').value;
+  const loc = document.getElementById('rf-loc').value.trim();
+  const days = Array.from(document.querySelectorAll('.day-dot.active')).map(d=>parseInt(d.dataset.day));
+  
+  if(!title || !time || !loc) { toast(g_lang==='ko'?"필수 항목을 입력하세요":"Fill required fields", "error"); return; }
+  
+  const newTmpl = {
+    id: 'tmpl_' + Date.now(),
+    title, freq, time, location: loc, days,
+    monthRule: document.getElementById('rf-month-rule').value,
+    organizer: S.currentUser,
+    attendees: selectedRecAttendees.map(a=>a.name),
+    alarm1: alarm1Min,
+    createdAt: new Date().toISOString()
+  };
+  
+  try {
+    await api('POST', '/recurring/templates', newTmpl);
+    if (!S.recurringTemplates) S.recurringTemplates = [];
+    S.recurringTemplates.push(newTmpl);
+    toast(g_lang==='ko'?"정기 미팅이 저장되었습니다.":"Saved");
+    closeRecModal();
+    renderRecurringTemplates();
+    renderDashboard();
+  } catch(e) {
+    toast('API 오류', 'error');
+  }
+}
+
+function generateRecurringInstances(template, count = 6) {
+  const instances = [];
+  let current = new Date();
+  current.setHours(0,0,0,0);
+  let found = 0;
+  let safeLoop = 0;
+  const localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}');
+  
+  while(found < count && safeLoop < 365) {
+    safeLoop++;
+    const day = current.getDay();
+    let match = false;
+    
+    if(template.freq === 'weekly' || template.freq === 'biweekly') {
+      if(template.days.includes(day)) {
+        if(template.freq === 'biweekly') {
+          const start = new Date(template.createdAt);
+          start.setHours(0,0,0,0);
+          const diffWeeks = Math.floor((current - start) / (7 * 24 * 60 * 60 * 1000));
+          if(diffWeeks % 2 === 0) match = true;
+        } else match = true;
+      }
+    } else if(template.freq === 'monthly') {
+      const rule = template.monthRule;
+      const targetDay = template.days[0] !== undefined ? template.days[0] : 1;
+      if(day === targetDay) {
+        if(rule === 'last') {
+          const nextW = new Date(current); nextW.setDate(current.getDate()+7);
+          if(nextW.getMonth() !== current.getMonth()) match = true;
+        } else {
+          const nth = Math.ceil(current.getDate() / 7);
+          if(nth === parseInt(rule)) match = true;
+        }
+      }
+    }
+
+    if(match) {
+      const pad = n => String(n).padStart(2,'0');
+      const dateStr = `${current.getFullYear()}-${pad(current.getMonth()+1)}-${pad(current.getDate())}`;
+      
+      const key = `${template.id}_${dateStr}`;
+      const override = S.recurringOverrides[key];
+      
+      if(!override || !override.isCancelled) {
+        const mTime = override?.time || template.time; 
+        const mDate = override?.date || dateStr; 
+        const mId = `rec_${key}`;
+        
+        const isEnded = S.recurringCompleted.includes(mId) || new Date(`${mDate}T${mTime}:00`).getTime() < Date.now() - 60*60000;
+        
+        instances.push({
+          id: mId,
+          recId: template.id,
+          dateStr: dateStr, 
+          isRecurring: true,
+          title: template.title,
+          datetime: `${mDate}T${mTime}:00`, 
+          location: override?.location || template.location,
+          agenda: override?.agenda || '',
+          organizer: template.organizer,
+          attendees: template.attendees || [], 
+          alarm1: template.alarm1 || 60,
+          isModified: !!override,
+          completed: isEnded,
+          minutes_list: localMin[mId]?.minutes_list || [] 
+        });
+        found++;
+      }
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return instances;
+}
+
+function renderRecurringTemplates() {
+  const el = document.getElementById('recurring-template-list');
+  if(!S.recurringTemplates || S.recurringTemplates.length === 0) {
+      el.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:40px; color:var(--text3)">등록된 정기 미팅 템플릿이 없습니다.</div>`;
+      return;
+  }
+  el.innerHTML = S.recurringTemplates.map(t => `
+    <div class="form-card" style="margin-bottom:0">
+      <div style="font-weight:700; font-size:16px; margin-bottom:5px; color:var(--purple)">🔁 ${t.title}</div>
+      <div style="font-size:13px; color:var(--text2)">주기: ${t.freq} | 시간: ${t.time}</div>
+      <div style="font-size:13px; color:var(--text2)">기본 장소: ${t.location}</div>
+      <div style="font-size:12px; color:var(--text3); margin-top:5px;">👤 참석자: ${(t.attendees||[]).length}명 지정됨</div>
+      <div style="margin-top:12px; border-top:1px dashed var(--border); padding-top:12px;">
+        <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${t.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteTemplate(id) {
+  if(!confirm(g_lang==='ko'?"정기 미팅 설정을 삭제하시겠습니까?":"Delete this recurring template?")) return;
+  try {
+    await api('DELETE', `/recurring/templates/${id}`);
+    S.recurringTemplates = S.recurringTemplates.filter(t=>t.id!==id);
+    renderRecurringTemplates();
+    renderDashboard();
+  } catch(e) { toast('API 오류', 'error'); }
+}
+
+function openOverrideModal(tmplId, dateStr) {
+  const tmpl = S.recurringTemplates.find(t=>t.id===tmplId);
+  if(!tmpl) return;
+  const key = `${tmplId}_${dateStr}`;
+  const ov = S.recurringOverrides[key] || {};
+  
+  document.getElementById('override-date-info').textContent = `${dateStr} 회차 개별 설정`;
+  document.getElementById('of-date').value = ov.date || dateStr; 
+  document.getElementById('of-time').value = ov.time || tmpl.time; 
+  document.getElementById('of-loc').value = ov.location || tmpl.location;
+  document.getElementById('of-agenda').value = ov.agenda || '';
+  document.getElementById('of-cancel').checked = !!ov.isCancelled;
+  
+  document.getElementById('override-modal-overlay').dataset.key = key;
+  document.getElementById('override-modal-overlay').classList.add('show');
+}
+
+function closeOverrideModal() { document.getElementById('override-modal-overlay').classList.remove('show'); }
+
+async function saveOverride() {
+  const key = document.getElementById('override-modal-overlay').dataset.key;
+  const data = {
+    date: document.getElementById('of-date').value, 
+    time: document.getElementById('of-time').value, 
+    location: document.getElementById('of-loc').value,
+    agenda: document.getElementById('of-agenda').value,
+    isCancelled: document.getElementById('of-cancel').checked
+  };
+  try {
+    await api('POST', `/recurring/overrides/${key}`, data);
+    S.recurringOverrides[key] = data;
+    closeOverrideModal();
+    renderDashboard();
+    toast(g_lang==='ko'?"이번 회차 설정이 변경되었습니다.":"Modified");
+  } catch(e) { toast('API 오류', 'error'); }
+}
+
+function renderDashboard() {
+  const now = new Date(); const cu = S.currentUser;
+  let virtualMeetings = [];
+  if (S.recurringTemplates) {
+      S.recurringTemplates.forEach(t => {
+          virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 4));
+      });
+  }
+  const combinedMeetings = [...S.meetings, ...virtualMeetings];
+
+  const visibleMeetings = combinedMeetings.filter(m => isVisible(m, cu)); 
+  const activeMeetings = showHidden ? visibleMeetings : visibleMeetings.filter(m => !S.hiddenIds.has(String(m.id)));
+  let list = [...activeMeetings].sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+  
+  if(S.viewFilter === 'mine') list = list.filter(m => isAttending(m, cu));
+  
+  const displayedActive = list.filter(m => !m.completed);
+  let totalCnt = 0, upcomingCnt = 0, liveCnt = 0, todayCnt = 0, pendingCnt = 0;
+  displayedActive.forEach(m => {
+    totalCnt++; const dt = new Date(m.datetime); const diffMs = dt.getTime() - now.getTime();
+    if (diffMs > 0) upcomingCnt++; if (diffMs <= 0 && diffMs > -60 * 60000) liveCnt++;
+    if (dt.toDateString() === now.toDateString()) todayCnt++; if (isAttending(m, cu) && diffMs > 0) pendingCnt++;
+  });
+  document.getElementById('s-total').textContent = totalCnt; document.getElementById('s-upcoming').textContent = upcomingCnt; document.getElementById('s-live').textContent = liveCnt; document.getElementById('s-today').textContent = todayCnt; document.getElementById('s-pending').textContent = pendingCnt;
+  document.getElementById('btn-show-hidden').style.display = S.hiddenIds.size > 0 ? '' : 'none';
+  
+  const el = document.getElementById('meeting-list');
+  if(!list.length){ el.innerHTML = emptyState('📅', g_lang==='ko'?'미팅이 없습니다':'No meetings', ''); } else {
+    const active = list.filter(m => !m.completed); const done = list.filter(m => m.completed && !m.isRecurring);
+    let html = active.map(m => renderCard(m, now, cu)).join('');
+    if(done.length) { html += `<div style="grid-column: 1 / -1; font-size:13px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase;margin:18px 0 8px;padding-left:4px;font-weight:700">✅ ${g_lang==='ko'?'완료된 미팅':'Completed'} (${done.length})</div>` + done.map(m => renderCard(m, now, cu)).join(''); }
+    el.innerHTML = html;
+  }
+  if(S.viewMode === 'calendar') renderCalendar();
+}
+
+function renderCard(m, now, cu) {
+  const dt=new Date(m.datetime), diff=dt-now; const isLive=!m.completed&&diff>-30*60000&&diff<=0; const isSoon=!m.completed&&diff>0&&diff<=15*60000; const isPast=!m.completed&&diff<-30*60000; const isComp=!!m.completed; const isMine=isAttending(m,cu); const isOrg=m.organizer===cu; const isHidden=S.hiddenIds.has(String(m.id));
+  const attendees = m.attendees||[]; const isPersonal = attendees.length === 0;
+  const isRec = m.isRecurring;
+  
+  let sc = isComp?'status-done':isLive?'status-live':isSoon?'status-soon':isPast?'status-done':(isRec?'status-recurring':'status-upcoming'); 
+  let sb;
+  if(isComp) sb=badge('green', g_lang==='ko'?'✅ 완료':'✅ Done'); else if(isLive) sb=badge('green', g_lang==='ko'?'🔴 진행 중':'🔴 Live'); else if(isSoon) sb=badge('amber', g_lang==='ko'?'⚡ 곧 시작':'⚡ Soon'); else if(isPast) sb=badge('gray', g_lang==='ko'?'종료':'Past'); else sb=badge('brand', g_lang==='ko'?'예정':'Upcoming');
+  
+  const personalB = isPersonal ? badge('teal', g_lang==='ko'?'개인 일정':'Personal') : ''; const myB = isMine && !isPersonal ? badge('purple', g_lang==='ko'?'내 미팅':'Mine') : ''; const orgB = isOrg && !isPersonal ? badge('brand', g_lang==='ko'?'주최자':'Organizer') : ''; const hidB = isHidden ? `<span class="badge badge-gray">Hidden</span>` : '';
+  const recB = isRec ? `<span class="badge badge-purple-rec">🔁 ${g_lang==='ko'?'정기':'Recurring'}</span>` : '';
+  const modB = m.isModified ? `<span class="badge badge-amber" style="font-size:10px">✏️ ${g_lang==='ko'?'수정됨':'Modified'}</span>` : '';
+  
+  const avatars = isPersonal ? `<div class="badge badge-gray" style="font-size:12px;padding:4px 10px;color:var(--text2)">👤 ${g_lang==='ko'?'나만의 일정':'Me Only'}</div>` : attendees.map(a=>{ const n=a.user_name||a; const c=getDeptColor(getUserDept(n)); return `<div class="avatar" style="background:${c}22;color:${c}">${n}</div>`; }).join('');
+  const attCountHtml = isPersonal ? '' : `<span style="font-size:14px;color:var(--text3);font-weight:600">${attendees.length}${g_lang==='ko'?'명':''}</span>`;
+  
+  const agenda = m.agenda ? `<div class="m-agenda">${m.agenda.split('\n').map(l=>`• ${l}`).join('<br>')}</div>` : ''; const countdown = (!isComp&&diff>0) ? `<span style="color:var(--amber);font-weight:700">⏱ ${getCountdown(diff)}</span>` : ''; const zoomBtn = m.zoom_link ? `<span onclick="event.stopPropagation();openExternalLink('${m.zoom_link}')" style="color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;display:inline-block;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;" title="${m.zoom_link}">🔗 ${m.zoom_link}</span>` : '';
+  let alarmBar='';
+  if(isMine&&!isPast&&!isComp) {
+    let myAlarm = attendees.find(a=>(a.user_name||a)===cu); if(!myAlarm && isOrg) myAlarm = m.org_alarm || { alarm_first:0, alarm_five:0, alarm_start:0 }; const af=myAlarm?.alarm_first||0, av=myAlarm?.alarm_five||0, as=myAlarm?.alarm_start||0;
+    alarmBar=`<div class="m-alarm-bar"><div class="alarm-step"><div class="alarm-dot ${af?'done':''}">${af?'✓':''}</div><div class="alarm-step-label">${m.alarm1||60}${g_lang==='ko'?'분 전':'m'}</div></div><div class="alarm-step"><div class="alarm-dot ${av?'done':af?'active':''}">${av?'✓':''}</div><div class="alarm-step-label">5${g_lang==='ko'?'분 전':'m'}</div></div><div class="alarm-step"><div class="alarm-dot ${as?'done':''}">${as?'✓':''}</div><div class="alarm-step-label">${g_lang==='ko'?'시작':'Start'}</div></div></div>`;
+  }
+  
+  const hasMinutes = m.minutes_list && m.minutes_list.length > 0;
+  const minutesBtn = hasMinutes 
+      ? `<button class="btn btn-primary btn-sm" style="font-size:13px" onclick="event.stopPropagation();openMinutesModal('${m.id}')">${I18N[g_lang].btn_min_view}</button>` 
+      : `<button class="btn btn-ghost btn-sm" style="font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();openMinutesModal('${m.id}')">${I18N[g_lang].btn_min_write}</button>`;
+
+  let actions = minutesBtn;
+  
+  if(isRec && !isComp && isMine) {
+      actions = `<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();openOverrideModal('${m.recId}', '${m.dateStr}')">✏️ ${g_lang==='ko'?'이번회차 수정':'Modify This'}</button>` + actions;
+  }
+
+  if(isLive && isOrg) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
+  
+  if(isHidden) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--brand);font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();unhideMeeting('${m.id}')">👁 ${g_lang==='ko'?'숨기기 취소':'Unhide'}</button>`;
+  else actions += `<button class="btn btn-ghost btn-sm" style="font-size:13px" onclick="event.stopPropagation();hideMeeting('${m.id}')">🙈 ${g_lang==='ko'?'숨기기':'Hide'}</button>`;
+  
+  if ((isOrg || cu === '강승윤') && !isRec) {
+      actions += `<button class="btn btn-danger btn-sm" style="font-size:13px" onclick="event.stopPropagation();deleteMeeting('${m.id}')">🗑 ${g_lang==='ko'?'삭제':'Delete'}</button>`;
+  }
+  
+  if(!isComp&&!isPast&&isMine&&!isOrg && !isRec) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--amber);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();leaveMeeting('${m.id}')">🚪 ${g_lang==='ko'?'참석 취소':'Leave'}</button>`;
+
+  return `<div class="meeting-card ${sc}" style="${isComp?'opacity:.7':''}${isHidden?';border-style:dashed':''}"><div class="m-top"><div class="m-title">${m.title}</div><div class="m-badges">${hidB}${personalB}${myB}${orgB}${recB}${modB}${sb}</div></div><div class="m-meta"><span>🕐 ${fmtDt(m.datetime)}</span><span>📍 ${m.location}</span>${isPersonal?'':`<span>👤 ${m.organizer}</span>`}${countdown?`<span>${countdown}</span>`:''}${zoomBtn?`<span>${zoomBtn}</span>`:''}</div>${agenda}<div class="m-footer"><div class="avatar-stack">${avatars}</div>${attCountHtml}</div>${alarmBar}<div class="m-actions" style="margin-top:12px;border-top:1px dashed var(--border);padding-top:12px">${actions}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// 🔴 2. 캘린더 기능 및 정기 참석자 피커
+// ═══════════════════════════════════════════════
+function changeMonth(diff) { calDate.setMonth(calDate.getMonth() + diff); renderCalendar(); }
+
+function renderCalendar() {
+  const y = calDate.getFullYear(); const m = calDate.getMonth(); document.getElementById('cal-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
+  const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
+  let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
+  for(let i=0; i<firstDay; i++) { html += `<div class="cal-cell empty"></div>`; }
+  
+  let virtualMeetings = [];
+  if (S.recurringTemplates) {
+      S.recurringTemplates.forEach(t => {
+          virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10));
+      });
+  }
+  const combinedMeetings = [...S.meetings, ...virtualMeetings];
+
+  for(let d=1; d<=daysInMonth; d++) {
+    const isToday = isCurrentMonth && d === todayDate; const cellClass = isToday ? 'cal-cell today' : 'cal-cell';
+    const dayMeetings = combinedMeetings.filter(meet => {
+      const md = new Date(meet.datetime); const isDateMatch = md.getFullYear() === y && md.getMonth() === m && md.getDate() === d;
+      const visible = isVisible(meet, S.currentUser); const notHidden = !showHidden ? !S.hiddenIds.has(String(meet.id)) : true; const passTab = S.viewFilter === 'mine' ? isAttending(meet, S.currentUser) : true;
+      return isDateMatch && visible && notHidden && passTab; 
+    });
+    dayMeetings.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+    let eventsHtml = dayMeetings.map(meet => {
+      const isMine = isAttending(meet, S.currentUser); const dt = new Date(meet.datetime); const p = n => String(n).padStart(2,'0'); const timeStr = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
+      const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="ev-time">${timeStr}</span> ${meet.title}</div>`;
+    }).join('');
+    html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
+  }
+  const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } } html += '</div>';
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function switchRecPickerTab(tab, btn) { 
+  document.getElementById('recurring-modal-overlay').querySelectorAll('.picker-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); 
+  document.getElementById('rec-picker-individual').style.display=tab==='individual'?'block':'none'; document.getElementById('rec-picker-dept').style.display=tab==='dept'?'block':'none'; 
+}
+function buildRecDeptPickerChips() { const el=document.getElementById('rec-dept-picker-chips'); if(!el) return; el.innerHTML=S.depts.map(d=>`<div class="dept-chip" id="rdchip-${d.id}" onclick="toggleRecDept('${d.id}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color}"></span>${d.name} <span style="font-size:11px;color:var(--text3)">(${S.users.filter(u=>u.dept_id===d.id).length})</span></div>`).join(''); }
+function searchRecAttendees(q) {
+  const dd=document.getElementById('rec-attendee-dd'); if(!q.trim()){ dd.classList.remove('open'); return; }
+  const res=S.users.filter(u=>u.name.includes(q)&&!selectedRecAttendees.find(s=>s.name===u.name)).slice(0,8); if(!res.length){ dd.innerHTML=`<div class="search-dd-item" style="color:var(--text3)">결과 없음</div>`; dd.classList.add('open'); return; }
+  dd.innerHTML=res.map(u=>{ const d=S.depts.find(x=>x.id===u.dept_id); return `<div class="search-dd-item" onclick="addRecAttendee('${u.name}','${u.dept_id}')"><div style="min-width:24px;height:24px;border-radius:12px;background:${d?.color||'#1BB5B8'}22;color:${d?.color||'#1BB5B8'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:0 8px">${u.name}</div><span>${u.name}</span><span style="font-size:11px;color:var(--text3);margin-left:6px;">${d?.name||''}</span></div>`; }).join(''); dd.classList.add('open');
+}
+function addRecAttendee(name, deptId) { if(selectedRecAttendees.find(s=>s.name===name)) return; const d=S.depts.find(x=>x.id===deptId); selectedRecAttendees.push({name, deptId, color:d?.color||'#1BB5B8', deptName:d?.name||''}); renderRecSelChips(); document.getElementById('rec-attendee-search').value=''; document.getElementById('rec-attendee-dd').classList.remove('open'); }
+function removeRecAttendee(name) { selectedRecAttendees=selectedRecAttendees.filter(s=>s.name!==name); renderRecSelChips(); }
+function toggleRecDept(id) { const d=S.depts.find(x=>x.id===id); const chip=document.getElementById(`rdchip-${id}`); if(chip.classList.contains('active')) { selectedRecAttendees=selectedRecAttendees.filter(s=>s.deptId!==id); chip.classList.remove('active'); } else { S.users.filter(u=>u.dept_id===id).forEach(u=>{ if(!selectedRecAttendees.find(s=>s.name===u.name)) selectedRecAttendees.push({name:u.name,deptId:id,color:d?.color||'#1BB5B8',deptName:d?.name||''}); }); chip.classList.add('active'); } renderRecSelChips(); }
+function renderRecSelChips() { const el=document.getElementById('rec-sel-chips'); document.getElementById('rec-sel-count').textContent=selectedRecAttendees.length; if(!selectedRecAttendees.length){ el.innerHTML=`<span style="font-size:12px;color:var(--text3)">참석자를 추가해주세요</span>`; return; } el.innerHTML=selectedRecAttendees.map(a=>`<div class="person-chip"><div class="chip-av" style="background:${a.color}22;color:${a.color}">${a.name}</div><span>${a.name}</span><span style="font-size:10px;color:var(--text3)">${a.deptName}</span><span class="chip-x" onclick="removeRecAttendee('${a.name}')">✕</span></div>`).join(''); }
+
+// ═══════════════════════════════════════════════
+// 🔴 3. 회의록 (독립 저장) & 종료 처리 로직
+// ═══════════════════════════════════════════════
+function openMinutesModal(id) {
+  let m = S.meetings.find(x => String(x.id) === String(id)); 
+  if(!m && id.startsWith('rec_')) {
+      let virtualMeetings = [];
+      if (S.recurringTemplates) {
+          S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
+      }
+      m = virtualMeetings.find(x=>String(x.id)===String(id));
+  }
+  if(!m) return;
+  document.getElementById('minutes-meeting-id').value = id;
+  document.getElementById('minutes-edit-id').value = '';
+  document.getElementById('minutes-content').value = '';
+  
+  document.getElementById('minutes-modal-subtitle').innerHTML = `<b>${g_lang==='ko'?'회의':'Meeting'}:</b> ${m.title} <span style="margin-left:12px"><b>${g_lang==='ko'?'일시':'Time'}:</b> ${fmtDt(m.datetime)}</span>`; 
+  
+  const listEl = document.getElementById('minutes-history-list');
+  let history = m.minutes_list || [];
+  
+  if (history.length === 0) {
+      listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:20px;">${g_lang==='ko'?'아직 작성된 회의록이 없습니다.':'No minutes recorded yet.'}</div>`;
+  } else {
+      listEl.innerHTML = history.map(h => {
+          const isMine = h.author === S.currentUser || S.currentUser === '강승윤';
+          return `
+          <div class="min-history-item" style="${h.author === S.currentUser ? 'border-color:var(--purple); background:var(--purple-bg);' : ''}">
+              <div class="min-history-header">
+                  <span class="min-history-author">👤 ${h.author}
+                    ${isMine ? `
+                      <span style="cursor:pointer; margin-left:6px; font-size:11px; opacity:0.8;" onclick="editMinute('${h.id}')" title="수정">✏️</span>
+                      <span style="cursor:pointer; margin-left:4px; font-size:11px; opacity:0.8; color:var(--red);" onclick="deleteMinute('${h.id}')" title="삭제">🗑️</span>
+                    ` : ''}
+                  </span>
+                  <span>${fmtDt(h.updated_at)}</span>
+              </div>
+              <div class="min-history-content">${h.content}</div>
+          </div>`;
+      }).join('');
+  }
+  document.getElementById('minutes-modal-overlay').classList.add('show'); 
+  safeFocus('minutes-content'); 
+}
+
+function editMinute(minId) {
+    const mId = document.getElementById('minutes-meeting-id').value;
+    let m = S.meetings.find(x => String(x.id) === String(mId));
+    if(!m && mId.startsWith('rec_')) {
+        let virtualMeetings = [];
+        S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
+        m = virtualMeetings.find(x=>String(x.id)===String(mId));
+    }
+    if(!m || !m.minutes_list) return;
+    
+    const entry = m.minutes_list.find(h => String(h.id) === String(minId));
+    if(entry) {
+        document.getElementById('minutes-edit-id').value = entry.id;
+        document.getElementById('minutes-content').value = entry.content;
+        document.getElementById('minutes-content').focus();
+        toast('수정 모드로 전환되었습니다.', 'info');
+    }
+}
+
+async function deleteMinute(minId) {
+    if(!confirm('이 회의록 기록을 삭제하시겠습니까?')) return;
+    
+    const mId = document.getElementById('minutes-meeting-id').value;
+    let m = S.meetings.find(x => String(x.id) === String(mId));
+    if(!m && mId.startsWith('rec_')) {
+        let virtualMeetings = [];
+        S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
+        m = virtualMeetings.find(x=>String(x.id)===String(mId));
+    }
+    if(!m || !m.minutes_list) return;
+
+    m.minutes_list = m.minutes_list.filter(h => String(h.id) !== String(minId));
+
+    if(mId.startsWith('rec_')) {
+        let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
+        localMin[mId] = { minutes_list: m.minutes_list }; 
+        localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
+    } else {
+        try { await api('PUT',`/meetings/${mId}/minutes_list`, { minutes_list: m.minutes_list }); } catch(e) { 
+            let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
+            localMin[mId] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
+        }
+    }
+    openMinutesModal(mId); 
+    toast('삭제되었습니다', 'info');
+}
+
+function closeMinutesModal() { document.getElementById('minutes-modal-overlay').classList.remove('show'); }
+
+async function saveMinutes() {
+  const id = document.getElementById('minutes-meeting-id').value; 
+  const editId = document.getElementById('minutes-edit-id').value; 
+  const content = document.getElementById('minutes-content').value.trim(); 
+  const cu = S.currentUser;
+  
+  if(!content) return toast('내용을 입력하세요','error');
+  
+  let m = S.meetings.find(x => String(x.id) === String(id));
+  if(!m && id.startsWith('rec_')) {
+      let virtualMeetings = [];
+      S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
+      m = virtualMeetings.find(x=>String(x.id)===String(id));
+  }
+  if(!m) return;
+  if(!m.minutes_list) m.minutes_list = [];
+
+  if (editId) {
+      const entry = m.minutes_list.find(h => String(h.id) === String(editId));
+      if(entry) { entry.content = content; entry.updated_at = new Date().toISOString(); }
+  } else {
+      m.minutes_list.push({ id: 'min_' + Date.now() + Math.floor(Math.random()*1000), author: cu, content: content, updated_at: new Date().toISOString() });
+  }
+
+  if(id.startsWith('rec_')) {
+      let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
+      localMin[id] = { minutes_list: m.minutes_list }; 
+      localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
+  } else {
+      try { await api('PUT',`/meetings/${id}/minutes_list`, { minutes_list: m.minutes_list }); } catch(e) { 
+          let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
+          localMin[id] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
+      }
+  }
+  
+  document.getElementById('minutes-edit-id').value = ''; document.getElementById('minutes-content').value = '';
+  openMinutesModal(id); 
+  toast('저장되었습니다', 'success'); 
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+}
+
+async function endMeeting(id) { 
+    if(!confirm(g_lang==='ko'?'일정을 종료할까요?':'End meeting?')) return; 
+    
+    if(id.startsWith('rec_')) {
+        try {
+          await api('POST', `/recurring/completed`, { id });
+          S.recurringCompleted.push(id);
+          toast(g_lang==='ko'?'종료되었습니다':'Ended','success');
+          renderDashboard(); updateBadges();
+        } catch(e) { toast('API 오류', 'error'); }
+        return;
+    }
+    
+    try { await api('PUT',`/meetings/${id}/complete`); } catch(e) { console.log(e); } 
+    const m=S.meetings.find(x=>String(x.id)===String(id)); if(m) m.completed=1; 
+    renderDashboard(); updateBadges(); toast(g_lang==='ko'?'종료되었습니다':'Ended','success'); 
+}
+
+// ═══════════════════════════════════════════════
+// ALARMS & DASHBOARD LOOP
+// ═══════════════════════════════════════════════
+// ── 알람 중복 방지용 캐시 (메모리) ──
+const _firedAlarms = new Set();
+
+async function checkAlarms() {
+  const now = new Date(), cu = S.currentUser;
+  
+  let virtualMeetings = [];
+  if (S.recurringTemplates) {
+      S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 6)); });
+  }
+  const combinedMeetings = [...S.meetings, ...virtualMeetings];
+
+  for(const m of combinedMeetings) {
+    if(m.completed) continue; if(!isAttending(m,cu)) continue; 
+    const dt = new Date(m.datetime); if(isNaN(dt.getTime())) continue; const diff = Math.floor((dt - now) / 60000); if(diff <= -60) continue;
+    let att = m.attendees?.find(a=>(a.user_name||a)===cu); if(!att && m.organizer === cu) { if(!m.org_alarm) m.org_alarm = { alarm_first:0, alarm_five:0, alarm_start:0 }; att = m.org_alarm; } if(!att) continue;
+    const a1 = Number(m.alarm1) || 60; if(diff > a1 + 2) continue; 
+    
+    const fireAPI = (type) => {
+        if(m.isRecurring) { /* Store recurring alarm status locally */ }
+        else { api('PUT',`/meetings/${m.id}/alarm`,{userName:cu,type}).catch(e=>{}); }
+    };
+
+    // ★ 수정: _firedAlarms Set으로 중복 방지
+    const k1 = `${m.id}_first`, k5 = `${m.id}_five`, ks = `${m.id}_start`;
+
+    if(!_firedAlarms.has(k1) && diff <= a1 && diff > a1 - 3) { _firedAlarms.add(k1); att.alarm_first=1; fireAPI('first'); fireAlarm(m,'first'); }
+    if(!_firedAlarms.has(k5) && diff <= 5 && diff > 2)        { _firedAlarms.add(k5); att.alarm_first=1; att.alarm_five=1; fireAPI('five'); fireAlarm(m,'five'); }
+    if(!_firedAlarms.has(ks) && diff <= 0 && diff > -3)        { _firedAlarms.add(ks); att.alarm_first=1; att.alarm_five=1; att.alarm_start=1; fireAPI('start'); fireAlarm(m,'start'); }
+  } updateBadges();
+}
+
+function startAlarmClock() { checkAlarms(); setInterval(checkAlarms, 10000); }
+
+function fireAlarm(m, type) {
+  const overlay=document.getElementById('alarm-overlay'); const modal=document.getElementById('alarm-modal'); const glyph=document.getElementById('alarm-glyph'); const badge_el=document.getElementById('alarm-type-badge'); const title=document.getElementById('alarm-modal-title'); const mtitle=document.getElementById('alarm-modal-meeting'); const detail=document.getElementById('alarm-modal-detail');
+  const pad=n=>String(n).padStart(2,'0'); const dt=new Date(m.datetime); const ts=`${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  const orgName = m.organizer; const isPersonal = (m.attendees||[]).length === 0; const attNames = !isPersonal ? (m.attendees||[]).map(a => a.user_name || a).join(', ') : '없음 (단독 일정)';
+  const myRoleText = isPersonal ? "(👤 본인 단독 일정)" : (m.organizer === S.currentUser ? "(👑 본인 주최 회의)" : "(👥 참석 필요)");
+  modal.className='modal';
+  if(type==='first'){ glyph.textContent='📅'; modal.classList.add('mod-first'); badge_el.innerHTML=badge('brand',`${m.alarm1||60}분 전 알림`); title.textContent='회의 일정 알림'; detail.innerHTML=`📍 ${m.location}<br>👑 주최: ${orgName}<br>👥 참석: ${attNames}<br>${m.agenda?`📌 ${m.agenda.split('\n')[0]}`:''}`; sendOsNotif(`🚨 [긴급] ${m.title}`,`${m.alarm1||60}분 후 시작 · ${m.location} ${myRoleText}`); sendSlackAlarm(m,type); } else if(type==='five'){ glyph.textContent='⚡'; modal.classList.add('mod-five'); badge_el.innerHTML=badge('amber','5분 전 최종 알림'); title.textContent='5분 후 시작!'; detail.innerHTML=`📍 ${m.location}으로 준비하세요<br>⏰ 시작: ${ts}`; sendOsNotif(`⚡ [임박] ${m.title}`,`5분 후 회의가 시작됩니다! ${myRoleText}`); sendSlackAlarm(m,type); } else { glyph.textContent='🚀'; modal.classList.add('mod-start'); badge_el.innerHTML=badge('green','🔴 일정 시작!'); title.textContent='지금 시작됩니다!'; detail.innerHTML=`📍 ${m.location}<br>⏰ ${ts}`; sendOsNotif(`🚀 [시작] ${m.title} 지금 시작!`, `📍 ${m.location} ${myRoleText}`); sendSlackAlarm(m,type); }
+  mtitle.textContent=m.title; overlay.classList.add('show'); renderDashboard();
+}
+
+function previewAlarm(id) { 
+    let m = S.meetings.find(x=>String(x.id)===String(id)); 
+    if(!m && id.startsWith('rec_')) {
+        let virtualMeetings = [];
+        if (S.recurringTemplates) {
+            S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 20)); });
+        }
+        m = virtualMeetings.find(x=>String(x.id)===String(id));
+    }
+    if(!m) return; 
+    fireAlarm(m,'first'); 
+}
+function dismissAlarm() { document.getElementById('alarm-overlay').classList.remove('show'); }
+function sendOsNotif(title, body) { sendIpc('send-notification',{title,body,urgency:'critical'}); if('Notification' in window && Notification.permission==='granted') new Notification(title,{body}); else if('Notification' in window) Notification.requestPermission().then(p=>{ if(p==='granted') new Notification(title,{body}); }); }
+async function sendSlackAlarm(m, type) {
+  if(!S.slackUrl) return; const dt=new Date(m.datetime), pad=n=>String(n).padStart(2,'0'); const ts=`${pad(dt.getHours())}:${pad(dt.getMinutes())}`; let text;
+  if(type==='first') text=`📅 *[${m.title}]* 일정이 *${m.alarm1||60}분 후* 시작됩니다.\n📍 ${m.location} · ⏰ ${ts}`; else if(type==='five') text=`⚡ *[${m.title}]* *5분 후* 시작! 📍 ${m.location}으로 준비하세요`; else text=`🚀 *[${m.title}]* 지금 시작! 📍 ${m.location}`; await invokeIpc('slack-webhook',{webhookUrl:S.slackUrl, text});
+}
+
+async function deleteMeeting(id) {
+  const m = S.meetings.find(x => String(x.id) === String(id)); if(!m) return;
+  if(!confirm(`"${m.title}" ${g_lang==='ko'?'미팅을 삭제할까요? 이 작업은 되돌릴 수 세 없습니다.':'Delete? Cannot be undone.'}`)) return;
+  try { await api('DELETE', `/meetings/${id}`); } catch(e) { console.log(e); } 
+  S.meetings = S.meetings.filter(x => String(x.id) !== String(id)); 
+  renderDashboard(); updateBadges(); toast(g_lang==='ko'?'삭제되었습니다':'Deleted', 'info'); 
+}
+async function leaveMeeting(id) {
+  if(!confirm(g_lang==='ko'?'참석을 취소하시겠습니까?':'Cancel attendance?')) return;
+  try {
+    await api('PUT', `/meetings/${id}/leave`, { userName: S.currentUser });
+    const m = S.meetings.find(x => String(x.id) === String(id));
+    if(m) {
+      const att = m.attendees.find(a => (a.user_name||a) === S.currentUser);
+      if(att && typeof att === 'object') att.left_meeting = true;
+      else if(att) m.attendees = m.attendees.map(a => a === S.currentUser ? { user_name: S.currentUser, left_meeting: true } : a);
+    }
+    renderDashboard(); updateBadges(); toast(g_lang==='ko'?'참석이 취소되었습니다':'Left meeting','info');
+  } catch(e) { toast('오류가 발생했습니다','error'); }
+}
+// ═══════════════════════════════════════════════
+// 단발성 미팅 등록 및 참석자 로직
+// ═══════════════════════════════════════════════
+let alarm1Min=60, selectedAttendees=[];
+function setAlarmPreset(min, btn) { alarm1Min=min; document.querySelectorAll('.alarm-preset').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.getElementById('custom-alarm-min').value=min; }
+function setCustomAlarm(v) { const n=parseInt(v); if(n>0){ alarm1Min=n; document.querySelectorAll('.alarm-preset').forEach(b=>b.classList.remove('active')); } }
+function switchPickerTab(tab, btn) { document.querySelectorAll('#page-create .picker-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); document.getElementById('picker-individual').style.display=tab==='individual'?'block':'none'; document.getElementById('picker-dept').style.display=tab==='dept'?'block':'none'; }
+function buildDeptPickerChips() { const el=document.getElementById('dept-picker-chips'); if(!el) return; el.innerHTML=S.depts.map(d=>`<div class="dept-chip" id="dchip-${d.id}" onclick="toggleDept('${d.id}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color}"></span>${d.name} <span style="font-size:11px;color:var(--text3)">(${S.users.filter(u=>u.dept_id===d.id).length})</span></div>`).join(''); }
+function searchAttendees(q) {
+  const dd=document.getElementById('attendee-dd'); if(!q.trim()){ dd.classList.remove('open'); return; }
+  const res=S.users.filter(u=>u.name.includes(q)&&!selectedAttendees.find(s=>s.name===u.name)).slice(0,8); if(!res.length){ dd.innerHTML=`<div class="search-dd-item" style="color:var(--text3)">결과 없음</div>`; dd.classList.add('open'); return; }
+  dd.innerHTML=res.map(u=>{ const d=S.depts.find(x=>x.id===u.dept_id); return `<div class="search-dd-item" onclick="addAttendee('${u.name}','${u.dept_id}')"><div style="min-width:24px;height:24px;border-radius:12px;background:${d?.color||'#1BB5B8'}22;color:${d?.color||'#1BB5B8'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:0 8px">${u.name}</div><span>${u.name}</span><span style="font-size:11px;color:var(--text3);margin-left:6px;">${d?.name||''}</span></div>`; }).join(''); dd.classList.add('open');
+}
+function addAttendee(name, deptId) { if(selectedAttendees.find(s=>s.name===name)) return; const d=S.depts.find(x=>x.id===deptId); selectedAttendees.push({name, deptId, color:d?.color||'#1BB5B8', deptName:d?.name||''}); renderSelChips(); document.getElementById('attendee-search').value=''; document.getElementById('attendee-dd').classList.remove('open'); }
+function removeAttendee(name) { selectedAttendees=selectedAttendees.filter(s=>s.name!==name); renderSelChips(); }
+function toggleDept(id) { const d=S.depts.find(x=>x.id===id); const chip=document.getElementById(`dchip-${id}`); if(chip.classList.contains('active')) { selectedAttendees=selectedAttendees.filter(s=>s.deptId!==id); chip.classList.remove('active'); } else { S.users.filter(u=>u.dept_id===id).forEach(u=>{ if(!selectedAttendees.find(s=>s.name===u.name)) selectedAttendees.push({name:u.name,deptId:id,color:d?.color||'#1BB5B8',deptName:d?.name||''}); }); chip.classList.add('active'); } renderSelChips(); }
+function renderSelChips() { const el=document.getElementById('sel-chips'); document.getElementById('sel-count').textContent=selectedAttendees.length; if(!selectedAttendees.length){ el.innerHTML=`<span style="font-size:12px;color:var(--text3)">참석자를 추가해주세요</span>`; return; } el.innerHTML=selectedAttendees.map(a=>`<div class="person-chip"><div class="chip-av" style="background:${a.color}22;color:${a.color}">${a.name}</div><span>${a.name}</span><span style="font-size:10px;color:var(--text3)">${a.deptName}</span><span class="chip-x" onclick="removeAttendee('${a.name}')">✕</span></div>`).join(''); }
+async function submitMeeting() {
+  const title=document.getElementById('f-title').value.trim(); const date=document.getElementById('f-date').value; const time=document.getElementById('f-time').value; const location=document.getElementById('f-loc').value.trim(); const agenda=document.getElementById('f-agenda').value.trim(); const zoomLink=document.getElementById('f-remote-link').value.trim();
+  if(!title||!date||!time||!location){ toast(g_lang==='ko'?'항목을 모두 입력하세요':'Fill all required fields','error'); return; } const dt=new Date(`${date}T${time}`); if(dt<new Date()){ toast(g_lang==='ko'?'현재 시간 이후로 설정하세요':'Must be in future','error'); return; }
+  try {
+    const r = await api('POST','/meetings',{ title, datetime:dt.toISOString(), location, zoomLink, agenda, organizer:S.currentUser, attendees:selectedAttendees.map(a=>a.name), alarm1:alarm1Min, }); if(r.error) throw new Error(r.error);
+    document.getElementById('f-title').value=''; document.getElementById('f-agenda').value=''; document.getElementById('f-remote-link').value=''; document.getElementById('f-loc').value=''; selectedAttendees=[]; renderSelChips(); document.querySelectorAll('.dept-chip').forEach(c=>c.classList.remove('active'));
+    toast(g_lang==='ko'?'등록되었습니다':'Success','success'); renderDashboard(); updateBadges(); goto('dashboard');
+  } catch(e) { toast(g_lang==='ko'?'실패':'Failed', 'error'); }
+}
+function setDefaultFormDate() { const now=new Date(), p=n=>String(n).padStart(2,'0'); document.getElementById('f-date').value=`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`; const ft=new Date(now.getTime()+60*60000); document.getElementById('f-time').value=`${p(ft.getHours())}:${p(ft.getMinutes())}`; }
+
+function renderMembers() {
+  const cu = S.currentUser; const el = document.getElementById('members-content'); const isAdmin = cu === '강승윤'; 
+  if(!S.depts.length){ el.innerHTML=emptyState('👥', g_lang==='ko'?'부서가 없습니다':'No Depts', ''); return; }
+  el.innerHTML=S.depts.map(d=>{
+    const deptUsers=S.users.filter(u=>u.dept_id===d.id);
+    return `<div class="dept-section"><div class="dept-sec-header"><div style="display:flex;align-items:center;gap:8px"><div class="dept-color-bar" style="background:${d.color}"></div><span style="font-weight:700;font-size:14px;color:var(--text)">${d.name}</span><span style="font-size:12px;color:var(--text3);font-weight:600">${deptUsers.length}${g_lang==='ko'?'명':''}</span></div><div class="dept-actions" style="display: ${isAdmin ? 'flex' : 'none'}"><button class="btn btn-ghost btn-sm" onclick="openAddMemberModal('${d.id}')">＋ ${g_lang==='ko'?'직원':'Staff'}</button><button class="btn btn-ghost btn-sm" onclick="openEditDeptModal('${d.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="delDept('${d.id}')">${g_lang==='ko'?'삭제':'Del'}</button></div></div><div class="members-grid">${deptUsers.length ? deptUsers.map(u=>`<div class="member-card${u.name===cu?' me':''}"><div class="member-av" style="background:${d.color}22;color:${d.color}">${u.name}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--text)">${u.name}${u.name===cu?' (나)':''}</div><div style="font-size:11px;color:var(--text3);font-weight:500">${d.name}</div></div><div class="member-card-actions">${(isAdmin || u.name === cu) ? `<button class="btn btn-ghost btn-sm" style="padding:3px 7px;font-size:10px" onclick="openEditMemberModal('${u.name}','${u.dept_id}')">✏️</button>` : ''}${isAdmin ? `<button class="btn btn-danger btn-sm" style="padding:3px 7px;font-size:10px; margin-left:3px" onclick="delMember('${u.name}')">🗑</button>` : ''}</div></div>`).join('') : `<div style="color:var(--text3);font-size:12px;padding:6px;font-weight:500">${g_lang==='ko'?'직원이 없습니다':'No staff'}</div>`}</div></div>`;
+  }).join('');
+}
+
+let selDeptColor='#1BB5B8';
+function openDeptModal(editId='') { document.getElementById('dept-modal-title').textContent=editId ? (g_lang==='ko'?'부서 수정':'Edit Dept') : (g_lang==='ko'?'부서 추가':'Add Dept'); document.getElementById('dept-edit-id').value=editId; const d=editId?S.depts.find(x=>x.id===editId):null; document.getElementById('dept-name-input').value=d?.name||''; selDeptColor=d?.color||'#1BB5B8'; document.getElementById('dept-color-val').value=selDeptColor; document.querySelectorAll('.color-swatch').forEach(s=>s.classList.toggle('active',s.dataset.color===selDeptColor)); document.getElementById('dept-modal').classList.add('show'); safeFocus('dept-name-input'); }
+function openEditDeptModal(id) { openDeptModal(id); }
+function closeDeptModal() { document.getElementById('dept-modal').classList.remove('show'); }
+function pickColor(el,c) { selDeptColor=c; document.getElementById('dept-color-val').value=c; document.querySelectorAll('.color-swatch').forEach(s=>s.classList.toggle('active',s.dataset.color===c)); }
+async function saveDept() {
+  const name=document.getElementById('dept-name-input').value.trim(); const color=document.getElementById('dept-color-val').value; const editId=document.getElementById('dept-edit-id').value;
+  if(!name){ toast(g_lang==='ko'?'이름을 입력하세요':'Input name','error'); return; }
+  if(editId) { await api('PUT',`/departments/${editId}`,{name,color}); const d=S.depts.find(x=>x.id===editId); if(d){ d.name=name; d.color=color; } } else { const newId='dept_'+Date.now(); await api('POST','/departments',{id:newId,name,color}); S.depts.push({id:newId,name,color}); }
+  buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); closeDeptModal(); toast(g_lang==='ko'?'저장되었습니다':'Saved','success');
+}
+async function delDept(id) {
+  const d=S.depts.find(x=>x.id===id); if(!confirm(g_lang==='ko'?`"${d?.name}" 삭제할까요?`:'Delete?')) return;
+  await api('DELETE',`/departments/${id}`); S.depts=S.depts.filter(x=>x.id!==id); buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); toast(g_lang==='ko'?'삭제되었습니다':'Deleted','info');
+}
+
+function openAddMemberModal(deptId='') { document.getElementById('member-modal-title').textContent = g_lang==='ko'?'직원 추가':'Add Staff'; document.getElementById('member-name-input').value=''; document.getElementById('member-pw-input').value=''; document.getElementById('member-edit-name').value=''; buildRegDeptSelect(); if(deptId) document.getElementById('member-dept-sel').value=deptId; document.getElementById('member-modal').classList.add('show'); safeFocus('member-name-input'); }
+function openEditMemberModal(name, deptId) { document.getElementById('member-modal-title').textContent = g_lang==='ko'?'정보 수정':'Edit Info'; document.getElementById('member-name-input').value=name; document.getElementById('member-pw-input').value=''; document.getElementById('member-edit-name').value=name; buildRegDeptSelect(); document.getElementById('member-dept-sel').value=deptId; document.getElementById('member-modal').classList.add('show'); }
+function closeMemberModal() { document.getElementById('member-modal').classList.remove('show'); }
+async function saveMember() {
+  const name=document.getElementById('member-name-input').value.trim(); const deptId=document.getElementById('member-dept-sel').value; const pw=document.getElementById('member-pw-input').value; const editName=document.getElementById('member-edit-name').value;
+if(!name||(!editName && pw.length<4)){ toast('Error','error'); return; }
+let r;
+if(editName) {
+  const body = {name, deptId};
+  if(pw) body.password = pw;
+  r = await api('PUT', `/users/${encodeURIComponent(editName)}`, body);
+} else {
+  r = await api('POST', '/register', {name, deptId, password:pw||'temp1234'});
+}
+if(r.error && !editName){ toast(r.error,'error'); return; }
+await loadUsers(); buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); closeMemberModal(); toast(g_lang==='ko'?'저장되었습니다':'Saved','success');
+}
+async function delMember(name) {
+  if (name === S.currentUser) { toast(g_lang==='ko'?'본인 계정은 삭제 불가':'Cannot delete yourself', 'error'); return; }
+  if (!confirm(g_lang==='ko'?`"${name}" 삭제할까요?`:'Delete?')) return;
+  try { const r = await api('DELETE', `/users/${encodeURIComponent(name)}`); if (r && r.error) { toast(r.error, 'error'); } else { S.users = S.users.filter(u => u.name !== name); buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); buildLoginSelect(); renderMembers(); toast(g_lang==='ko'?'삭제되었습니다':'Deleted', 'info'); } } catch (e) { console.error(e); }
+}
+
+// ═══════════════════════════════════════════════
+// 🔴 SCHEDULER LOGIC 2.0 (개인/팀 일정)
+// ═══════════════════════════════════════════════
+function setSchFilter(filter) {
+    S.schFilter = filter; document.getElementById('sch-filter-my').classList.remove('active'); document.getElementById('sch-filter-team').classList.remove('active'); document.getElementById('sch-filter-all').classList.remove('active');
+    document.getElementById(`sch-filter-${filter}`).classList.add('active'); renderSchCalendar();
+}
+function changeSchMonth(diff) { schCalDate.setMonth(schCalDate.getMonth() + diff); renderSchCalendar(); }
+function renderSchCalendar() {
+    const y = schCalDate.getFullYear(); const m = schCalDate.getMonth(); document.getElementById('sch-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
+    const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
+    let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
+    for(let i=0; i<firstDay; i++) { html += `<div class="cal-cell empty"></div>`; }
+    const pad = n => String(n).padStart(2,'0');
+    for(let d=1; d<=daysInMonth; d++) {
+        const isToday = isCurrentMonth && d === todayDate; const cellClass = isToday ? 'cal-cell sch-cell today' : 'cal-cell sch-cell'; const dateStr = `${y}-${pad(m+1)}-${pad(d)}`;
+        const daySchedules = S.schedules.filter(sch => {
+            if (sch.date !== dateStr) return false;
+            if (S.schFilter === 'my') return sch.visibility === 'private' && sch.author === S.currentUser;
+            if (S.schFilter === 'team') return sch.visibility === 'team' && sch.deptId === S.currentDeptId;
+            if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
+        });
+        let eventsHtml = daySchedules.map(sch => {
+            const visClass = sch.visibility; let authorText = ''; if (visClass !== 'private') authorText = `<span class="sch-author">${sch.author}</span> `;
+            return `<div class="sch-ev ${visClass}"><div class="sch-text-wrap">${authorText}${sch.content}</div></div>`;
+        }).join('');
+        html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
+    }
+    const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } }
+    html += '</div>'; document.getElementById('sch-cal-grid').innerHTML = html;
+}
+
+function openDailyViewModal(dateStr) {
+    document.getElementById('daily-view-date').value = dateStr; const dispDate = g_lang==='ko' ? `${dateStr.split('-')[0]}년 ${dateStr.split('-')[1]}월 ${dateStr.split('-')[2]}일` : dateStr;
+    document.getElementById('daily-view-title').textContent = `🗓️ ${dispDate}`; renderDailyViewList(dateStr); document.getElementById('daily-view-overlay').classList.add('show');
+}
+function closeDailyViewModal() { document.getElementById('daily-view-overlay').classList.remove('show'); }
+function renderDailyViewList(dateStr) {
+    const listEl = document.getElementById('daily-view-list');
+    const daySchedules = S.schedules.filter(sch => {
+        if (sch.date !== dateStr) return false;
+        if (S.schFilter === 'my') return sch.visibility === 'private' && sch.author === S.currentUser;
+        if (S.schFilter === 'team') return sch.visibility === 'team' && sch.deptId === S.currentDeptId;
+        if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
+    });
+    if (daySchedules.length === 0) { listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:30px;">${g_lang==='ko'?'등록된 일정이 없습니다.':'No schedules for this day.'}</div>`; return; }
+    listEl.innerHTML = daySchedules.map(sch => {
+        const canDel = (sch.author === S.currentUser || S.currentUser === '강승윤'); const comments = sch.comments || [];
+        let commentsHtml = comments.map(c => `<div class="dv-comment"><span class="dv-comment-author">${c.author}</span><span>${c.content}</span></div>`).join('');
+        return `<div class="dv-item ${sch.visibility}"><div class="dv-header"><span style="font-weight:700;">${sch.visibility === 'private' ? (g_lang==='ko'?'나만보기':'Private') : '👤 ' + sch.author}</span>${canDel ? `<span class="sch-del" onclick="delSchedule('${sch.id}')">✕ ${g_lang==='ko'?'삭제':'Delete'}</span>` : ''}</div><div class="dv-content">${sch.content}</div><div class="dv-comments">${commentsHtml}<div class="dv-comment-input-wrap"><input type="text" class="dv-comment-input" id="cmt-input-${sch.id}" placeholder="${g_lang==='ko'?'댓글을 남겨보세요...':'Write a comment...'}" onkeydown="if(event.key==='Enter')addComment('${sch.id}')"><button class="btn btn-ghost btn-sm" onclick="addComment('${sch.id}')">등록</button></div></div></div>`;
+    }).join('');
+}
+
+async function addComment(schId) {
+    const input = document.getElementById(`cmt-input-${schId}`); const text = input.value.trim(); if (!text) return;
+    try {
+      await api('POST', `/schedules/${schId}/comments`, { author: S.currentUser, content: text });
+      const sch = S.schedules.find(s => s.id === schId);
+      if (sch) { if (!sch.comments) sch.comments = []; sch.comments.push({ author: S.currentUser, content: text, timestamp: Date.now() }); input.value = ''; renderDailyViewList(document.getElementById('daily-view-date').value); }
+    } catch(e) { toast('API 오류', 'error'); }
+}
+
+function openAddSchFromDaily() {
+    const dateStr = document.getElementById('daily-view-date').value; document.getElementById('add-sch-date').value = dateStr;
+    const dispDate = g_lang==='ko' ? `${dateStr.split('-')[0]}년 ${dateStr.split('-')[1]}월 ${dateStr.split('-')[2]}일` : dateStr;
+    document.getElementById('add-sch-date-label').textContent = `🗓️ ${dispDate}`; document.getElementById('add-sch-content').value = '';
+    if (document.activeElement) document.activeElement.blur();
+    closeDailyViewModal(); 
+    setTimeout(() => { document.getElementById('add-sch-overlay').classList.add('show'); safeFocus('add-sch-content'); }, 200);
+}
+function closeSchModal() { document.getElementById('add-sch-overlay').classList.remove('show'); setTimeout(() => { openDailyViewModal(document.getElementById('add-sch-date').value); }, 200); }
+
+async function saveSchedule() {
+    const content = document.getElementById('add-sch-content').value.trim();
+    if(!content) { toast(g_lang==='ko' ? '일정 내용을 입력하세요.' : 'Enter content.', 'error'); return; }
+    const date = document.getElementById('add-sch-date').value;
+    let visibility = 'team'; if (S.schFilter === 'my') visibility = 'private'; else if (S.schFilter === 'all') visibility = 'public';
+    const newSch = { id: 'sch_' + Date.now(), date: date, content: content, author: S.currentUser, deptId: S.currentDeptId, visibility: visibility, comments: [] };
+    
+    try {
+      await api('POST', '/schedules', newSch);
+      S.schedules.push(newSch); 
+      toast(g_lang==='ko' ? '일정이 저장되었습니다.' : 'Schedule saved.', 'success'); document.getElementById('add-sch-overlay').classList.remove('show');
+      renderSchCalendar(); setTimeout(() => { openDailyViewModal(date); }, 200);
+    } catch(e) { toast('API 오류', 'error'); }
+}
+
+async function delSchedule(id) {
+    if(!confirm(g_lang==='ko' ? '일정을 삭제하시겠습니까?' : 'Delete schedule?')) return;
+    try {
+      await api('DELETE', `/schedules/${id}`);
+      S.schedules = S.schedules.filter(s => s.id !== id); 
+      toast(g_lang==='ko' ? '삭제 완료' : 'Deleted', 'info'); renderSchCalendar(); renderDailyViewList(document.getElementById('daily-view-date').value);
+    } catch(e) { toast('API 오류', 'error'); }
+}
+
+// ═══════════════════════════════════════════════
+// 🔴 TODAY SUMMARY MODAL 로직
+// ═══════════════════════════════════════════════
+function toggleTodayItem(id) {
+    let doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
+    const el = document.getElementById('today-item-' + id);
+    
+    if (doneIds.includes(id)) {
+        doneIds = doneIds.filter(x => x !== id);
+        if (el) el.classList.remove('done-strike');
+    } else {
+        doneIds.push(id);
+        if (el) el.classList.add('done-strike');
+    }
+    
+    localStorage.setItem('ma_today_done', JSON.stringify(doneIds));
+}
+
+function openTodayModal() {
+    const now = new Date();
+    const days = g_lang === 'ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    document.getElementById('today-modal-date').textContent = `${now.getMonth()+1}/${now.getDate()} (${days[now.getDay()]})`;
+
+    const pad = n => String(n).padStart(2,'0');
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const todayStrDate = now.toDateString();
+    const cu = S.currentUser;
+    const doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
+
+    let allMeetingsToday = [...S.meetings];
+    if (S.recurringTemplates) {
+        S.recurringTemplates.forEach(t => {
+            allMeetingsToday = allMeetingsToday.concat(generateRecurringInstances(t, 10));
+        });
+    }
+
+    const myMeetings = allMeetingsToday.filter(m => {
+        const md = new Date(m.datetime);
+        return md.toDateString() === todayStrDate && isAttending(m, cu);
+    }).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+
+    const mListEl = document.getElementById('today-meetings-list');
+    if(myMeetings.length === 0) {
+        mListEl.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px;text-align:center;">${g_lang==='ko'?'오늘 예정된 미팅이 없습니다.':'No meetings today.'}</div>`;
+    } else {
+        mListEl.innerHTML = myMeetings.map(m => {
+            const dt = new Date(m.datetime);
+            const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            const stat = m.completed ? '✅ ' : '⏰ ';
+            const isDone = doneIds.includes(m.id) ? 'done-strike' : '';
+            
+            return `<div class="today-item meet ${isDone}" id="today-item-${m.id}" onclick="toggleTodayItem('${m.id}')">
+                <div class="today-item-top"><span>${stat}${timeStr}</span><span>📍 ${m.location}</span></div>
+                <div class="today-item-title">${m.isRecurring ? '🔁 ' : ''}${m.title}</div>
+            </div>`;
+        }).join('');
+    }
+
+    const mySchedules = S.schedules.filter(sch => {
+        if(sch.date !== todayStr) return false;
+        if(sch.visibility === 'public') return true;
+        if(sch.visibility === 'team' && sch.deptId === S.currentDeptId) return true;
+        if(sch.visibility === 'private' && sch.author === cu) return true;
+        return false;
+    });
+
+    const sListEl = document.getElementById('today-schedules-list');
+    if(mySchedules.length === 0) {
+        sListEl.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px;text-align:center;">${g_lang==='ko'?'오늘 예정된 메모 일정이 없습니다.':'No schedules today.'}</div>`;
+    } else {
+        sListEl.innerHTML = mySchedules.map(sch => {
+            let typeTxt = '';
+            if(sch.visibility === 'private') typeTxt = g_lang==='ko'?'나만보기':'Private';
+            else if(sch.visibility === 'team') typeTxt = g_lang==='ko'?'팀 일정':'Team';
+            else typeTxt = g_lang==='ko'?'전체 일정':'Public';
+
+            const isDone = doneIds.includes(sch.id) ? 'done-strike' : '';
+
+            return `<div class="today-item sch-${sch.visibility} ${isDone}" id="today-item-${sch.id}" onclick="toggleTodayItem('${sch.id}')">
+                <div class="today-item-top"><span>${typeTxt}</span><span>👤 ${sch.author}</span></div>
+                <div class="today-item-title" style="white-space:pre-wrap;font-weight:400;">${sch.content}</div>
+            </div>`;
+        }).join('');
+    }
+
+    document.getElementById('today-modal-overlay').classList.add('show');
+}
+
+function closeTodayModal() {
+    document.getElementById('today-modal-overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════
+function loadSettingsPage() { document.getElementById('slack-url').value=S.slackUrl; document.getElementById('slack-channel').value=S.slackChannel; document.getElementById('server-info-text').textContent=SERVER_URL; }
+function saveSlack() { S.slackUrl=document.getElementById('slack-url').value.trim(); S.slackChannel=document.getElementById('slack-channel').value.trim(); localStorage.setItem('ma_slack_url',S.slackUrl); localStorage.setItem('ma_slack_ch',S.slackChannel); document.getElementById('slack-status').innerHTML='<div class="sp-status ok">✅ Saved</div>'; toast('Saved','success'); }
+async function testSlack() { if(!S.slackUrl){ toast('Error','error'); return; } const status=await invokeIpc('slack-webhook',{webhookUrl:S.slackUrl,text:'🔔 Test!'}); const el=document.getElementById('slack-status'); if(status===200){ el.innerHTML='<div class="sp-status ok">✅ Success</div>'; toast('Success','success'); } else { el.innerHTML=`<div class="sp-status err">❌ Fail (${status})</div>`; } }
+function saveServerIpFromSettings() { 
+  const ip = document.getElementById('server-ip-input').value.trim(); 
+  if(!ip) { toast('IP를 입력하세요','error'); return; } 
+  localStorage.setItem('ma_server_ip', ip); 
+  S.serverUrl = ip + ':3000'; 
+  document.getElementById('server-info-text').textContent=`Current: ${S.serverUrl}`; 
+  toast('서버 IP가 저장되었습니다','success'); 
+}
+// ═══════════════════════════════════════════════
+// BADGES & IME 픽스
+// ═══════════════════════════════════════════════
+function updateBadges() { const now=new Date(), cu=S.currentUser; const cnt=S.meetings.filter(m=>isVisible(m,cu)&&isAttending(m,cu)&&new Date(m.datetime)>now&&!m.completed).length; const b=document.getElementById('badge-upcoming'); if(cnt>0){ b.style.display=''; b.textContent=cnt; } else b.style.display='none'; }
+
+document.addEventListener('DOMContentLoaded',()=>{ 
+  document.querySelectorAll('input,textarea').forEach(fixIme); 
+  new MutationObserver(muts=>muts.forEach(m=>m.addedNodes.forEach(n=>{ 
+    if(n.nodeType===1){ 
+      if(n.matches&&(n.matches('input')||n.matches('textarea'))) fixIme(n); 
+      n.querySelectorAll&&n.querySelectorAll('input,textarea').forEach(fixIme); 
+    } 
+  }))).observe(document.body,{childList:true,subtree:true}); 
+});
+
+function fixIme(el){
+    if(el._imeFixed) return;
+    el._imeFixed=true;
+    el.addEventListener('compositionstart', () => { el._composing = true; }, true);
+    el.addEventListener('compositionend', () => { el._composing = false; }, true);
+    el.addEventListener('keydown', e => {
+        if((e.isComposing || el._composing) && e.key === 'Enter') {
+            e.stopImmediatePropagation(); e.preventDefault();
+        }
+    }, true);
+}
+
+function safeFocus(id){
+    setTimeout(() => {
+        try {
+            const el = typeof id === 'string' ? document.getElementById(id) : id;
+            if(el){ el.blur(); el.focus(); }
+        } catch(e){}
+    }, 380);
+}
+
+boot();
+</script>
+</body>
+</html>
