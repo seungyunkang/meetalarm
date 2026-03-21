@@ -1829,7 +1829,7 @@ function renderSchCalendar() {
         const daySchedules = S.schedules.filter(sch => {
             if (sch.date !== dateStr) return false;
             if (S.schFilter === 'my') return sch.visibility === 'private' && sch.author === S.currentUser;
-            if (S.schFilter === 'team') return sch.visibility === 'team' && sch.deptId === S.currentDeptId;
+            if (S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
             if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
         });
         let eventsHtml = daySchedules.map(sch => {
@@ -1852,7 +1852,7 @@ function renderDailyViewList(dateStr) {
     const daySchedules = S.schedules.filter(sch => {
         if (sch.date !== dateStr) return false;
         if (S.schFilter === 'my') return sch.visibility === 'private' && sch.author === S.currentUser;
-        if (S.schFilter === 'team') return sch.visibility === 'team' && sch.deptId === S.currentDeptId;
+        if (S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
         if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
     });
     if (daySchedules.length === 0) { listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:30px;">${g_lang==='ko'?'등록된 일정이 없습니다.':'No schedules for this day.'}</div>`; return; }
@@ -1889,7 +1889,7 @@ async function saveSchedule() {
     if(!content) { toast(g_lang==='ko' ? '일정 내용을 입력하세요.' : 'Enter content.', 'error'); return; }
     const date = document.getElementById('add-sch-date').value;
     let visibility = 'team'; if (S.schFilter === 'my') visibility = 'private'; else if (S.schFilter === 'all') visibility = 'public';
-    const newSch = { id: 'sch_' + Date.now(), date: date, content: content, author: S.currentUser, deptId: S.currentDeptId, visibility: visibility, comments: [] };
+    const newSch = { id: 'sch_' + Date.now(), date: date, content: content, author: S.currentUser, deptId: S.currentDeptId, dept_id: S.currentDeptId, visibility: visibility, comments: [] };
     _savingSchedule = true;
     try {
       await api('POST', '/schedules', newSch);
