@@ -445,7 +445,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <button class="nav-btn" id="nav-members" onclick="goto('members')">
         <div class="nav-icon">👥</div><span data-i18n="nav_members">구성원 관리</span>
       </button>
-      <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
+      <button class="nav-btn" id="nav-settings" onclick="goto('settings')" style="display:none">
         <div class="nav-icon">⚙️</div><span data-i18n="nav_settings">연동 설정</span>
       </button>
       <button class="nav-btn" id="nav-archive" onclick="goto('archive')">
@@ -1116,7 +1116,10 @@ async function enterApp(userName) {
   await loadRecurring();
   
   buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
-  if (S.currentUser === '강승윤') { document.getElementById('btn-add-dept').style.display = 'inline-block'; }
+  if (S.currentUser === '강승윤') { 
+    document.getElementById('btn-add-dept').style.display = 'inline-block';
+    document.getElementById('nav-settings').style.display = 'flex';
+  }
 }
 
 function connectWS() {
@@ -1126,8 +1129,8 @@ function connectWS() {
   ws.onopen = () => { ws.send(JSON.stringify({event:'auth', name:S.currentUser, companyId:S.companyId})); setConnStatus(true); };
   ws.onmessage = async (e) => {
     const msg = JSON.parse(e.data);
-    if(msg.event==='meeting_created'||msg.event==='meeting_updated') { const idx = S.meetings.findIndex(m=>m.id===msg.data.id); if(idx>=0) S.meetings[idx]=msg.data; else S.meetings.push(msg.data); renderDashboard(); updateBadges(); }
-    if(msg.event==='meeting_deleted') { S.meetings = S.meetings.filter(m=>String(m.id)!==String(msg.data.id)); renderDashboard(); updateBadges(); }
+    if(msg.event==='meeting_created'||msg.event==='meeting_updated') { await loadMeetings(); renderDashboard(); updateBadges(); }
+    if(msg.event==='meeting_deleted') { await loadMeetings(); renderDashboard(); updateBadges(); }
     if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
     if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
@@ -1159,7 +1162,7 @@ function goto(id) {
   if(id==='dashboard') renderDashboard(); 
   if(id==='schedules') renderSchCalendar(); 
   if(id==='members') renderMembers(); 
-  if(id==='settings') loadSettingsPage();
+  if(id==='settings') { if(S.currentUser !== '강승윤') { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
 }
@@ -1661,9 +1664,20 @@ async function endMeeting(id) {
         return;
     }
     
-    try { await api('PUT',`/meetings/${id}/complete`); } catch(e) { console.log(e); } 
-    const m=S.meetings.find(x=>String(x.id)===String(id)); if(m) m.completed=1; 
-    renderDashboard(); updateBadges(); toast(g_lang==='ko'?'종료되었습니다':'Ended','success'); 
+    const m = S.meetings.find(x => String(x.id) === String(id));
+    const hasMinutes = m && m.minutes_list && m.minutes_list.length > 0;
+
+    if(hasMinutes) {
+      // 회의록 있으면 아카이브로 이동
+      try { await api('PUT', `/meetings/${id}/archive`); } catch(e) { console.log(e); }
+      S.meetings = S.meetings.filter(x => String(x.id) !== String(id));
+      renderDashboard(); updateBadges(); toast('회의록이 아카이브로 보관되었습니다', 'info');
+    } else {
+      // 회의록 없으면 완료 처리
+      try { await api('PUT',`/meetings/${id}/complete`); } catch(e) { console.log(e); } 
+      if(m) m.completed = 1; 
+      renderDashboard(); updateBadges(); toast(g_lang==='ko'?'종료되었습니다':'Ended','success');
+    }
 }
 
 // ═══════════════════════════════════════════════
