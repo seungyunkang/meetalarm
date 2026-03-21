@@ -1131,6 +1131,11 @@ function connectWS() {
     const msg = JSON.parse(e.data);
     if(msg.event==='meeting_created'||msg.event==='meeting_updated') { await loadMeetings(); renderDashboard(); updateBadges(); }
     if(msg.event==='meeting_deleted') { await loadMeetings(); renderDashboard(); updateBadges(); }
+    if(msg.event==='meeting_ended') { 
+      await loadMeetings(); renderDashboard(); updateBadges();
+      const m = S.meetings.find(x => String(x.id) === String(msg.data.id));
+      if(m && isAttending(m, S.currentUser) && m.organizer !== S.currentUser) fireEndedNotif(m);
+    }
     if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
     if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
@@ -1449,12 +1454,15 @@ function renderCard(m, now, cu) {
       actions = `<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();openOverrideModal('${m.recId}', '${m.dateStr}')">✏️ ${g_lang==='ko'?'이번회차 수정':'Modify This'}</button>` + actions;
   }
 
-  if(isLive && isOrg) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
+  if((isLive || isPast) && isOrg && !isComp) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
+  
+  // 정기 미팅도 시간 지나면 종료 버튼 표시
+  if(isRec && (isLive || isPast) && isOrg && !isComp) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
   
   if(isHidden) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--brand);font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();unhideMeeting('${m.id}')">👁 ${g_lang==='ko'?'숨기기 취소':'Unhide'}</button>`;
   else actions += `<button class="btn btn-ghost btn-sm" style="font-size:13px" onclick="event.stopPropagation();hideMeeting('${m.id}')">🙈 ${g_lang==='ko'?'숨기기':'Hide'}</button>`;
   
-  if ((isOrg || cu === '강승윤') && !isRec) {
+  if (isOrg && !isRec) {
       actions += `<button class="btn btn-danger btn-sm" style="font-size:13px" onclick="event.stopPropagation();deleteMeeting('${m.id}')">🗑 ${g_lang==='ko'?'삭제':'Delete'}</button>`;
   }
   
@@ -1655,12 +1663,50 @@ async function endMeeting(id) {
     if(!confirm(g_lang==='ko'?'일정을 종료할까요?':'End meeting?')) return; 
     
     if(id.startsWith('rec_')) {
-        try {
-          await api('POST', `/recurring/completed`, { id });
-          S.recurringCompleted.push(id);
-          toast(g_lang==='ko'?'종료되었습니다':'Ended','success');
-          renderDashboard(); updateBadges();
-        } catch(e) { toast('API 오류', 'error'); }
+        const m2 = (() => {
+            let vm = [];
+            S.recurringTemplates.forEach(t => { vm = vm.concat(generateRecurringInstances(t, 20)); });
+            return vm.find(x => String(x.id) === String(id));
+        })();
+        const hasMinutes = m2 && m2.minutes_list && m2.minutes_list.length > 0;
+
+        if(hasMinutes) {
+            // 회의록 있으면 일반 미팅으로 DB에 저장 후 아카이브로 이동
+            if(!confirm('회의록이 있습니다. 아카이브로 보관할까요?')) return;
+            try {
+                // 정기 미팅 인스턴스를 일반 미팅으로 저장 후 아카이브
+                const r = await api('POST', '/meetings', {
+                    title: m2.title,
+                    datetime: m2.datetime,
+                    location: m2.location,
+                    organizer: m2.organizer,
+                    attendees: m2.attendees || [],
+                    alarm1: m2.alarm1 || 60,
+                    agenda: m2.agenda || ''
+                });
+                // 저장된 미팅에 회의록 붙이기
+                const newId = (await api('GET', '/meetings')).find(x => x.title === m2.title && x.datetime === m2.datetime)?.id;
+                if(newId) {
+                    await api('PUT', `/meetings/${newId}/minutes_list`, { minutes_list: m2.minutes_list });
+                    await api('PUT', `/meetings/${newId}/archive`);
+                }
+                // 정기 미팅 완료 처리
+                await api('POST', `/recurring/completed`, { id });
+                S.recurringCompleted.push(id);
+                if(m2) fireEndedNotif(m2);
+                toast('회의록이 아카이브로 보관되었습니다', 'info');
+                renderDashboard(); updateBadges();
+            } catch(e) { toast('API 오류', 'error'); }
+        } else {
+            if(!confirm(g_lang==='ko'?'일정을 종료할까요?':'End meeting?')) return;
+            try {
+                await api('POST', `/recurring/completed`, { id });
+                S.recurringCompleted.push(id);
+                if(m2) fireEndedNotif(m2);
+                toast(g_lang==='ko'?'종료되었습니다':'Ended', 'success');
+                renderDashboard(); updateBadges();
+            } catch(e) { toast('API 오류', 'error'); }
+        }
         return;
     }
     
@@ -1830,6 +1876,24 @@ async function permanentDelete(id) {
     renderArchive();
   } catch(e) { toast('오류 발생', 'error'); }
 }
+function fireEndedNotif(m) {
+  const overlay = document.getElementById('alarm-overlay');
+  const modal = document.getElementById('alarm-modal');
+  const glyph = document.getElementById('alarm-glyph');
+  const badge_el = document.getElementById('alarm-type-badge');
+  const title = document.getElementById('alarm-modal-title');
+  const mtitle = document.getElementById('alarm-modal-meeting');
+  const detail = document.getElementById('alarm-modal-detail');
+  modal.className = 'modal mod-start';
+  glyph.textContent = '🏁';
+  badge_el.innerHTML = badge('green', '미팅 종료');
+  title.textContent = '미팅이 종료되었습니다';
+  mtitle.textContent = m.title;
+  detail.innerHTML = `📍 ${m.location}<br>👑 주최: ${m.organizer}`;
+  overlay.classList.add('show');
+  sendOsNotif(`🏁 ${m.title} 종료`, `미팅이 종료되었습니다`);
+}
+
 async function leaveMeeting(id) {
   if(!confirm(g_lang==='ko'?'참석을 취소하시겠습니까?':'Cancel attendance?')) return;
   try {
