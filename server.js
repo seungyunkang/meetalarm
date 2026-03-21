@@ -136,6 +136,19 @@ const httpServer = http.createServer(async (req, res) => {
       return rows.length ? send(rows[0]) : send({ error: '유효하지 않은 초대코드입니다' }, 404);
     }
 
+    // 현재 초대코드 조회 (관리자용)
+    if (req.method === 'GET' && url === '/api/company/invite-code') {
+      const { rows } = await pool.query('SELECT invite_code FROM companies WHERE id=$1', [companyId]);
+      return rows.length ? send({ inviteCode: rows[0].invite_code }) : send({ error: 'Not found' }, 404);
+    }
+
+    // 초대코드 재발급 (관리자용)
+    if (req.method === 'POST' && url === '/api/company/regen-invite') {
+      const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      await pool.query('UPDATE companies SET invite_code=$1 WHERE id=$2', [newCode, companyId]);
+      return send({ inviteCode: newCode });
+    }
+
     // ── 회원가입 / 로그인 ───────────────────────
     if (req.method === 'POST' && url === '/api/register') {
       const { name, pw, deptId, companyId: cId } = await getBody();

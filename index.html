@@ -624,6 +624,15 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
           <div class="sp-desc">현재 서버: <b id="server-info-text"></b></div>
           <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="changeCompany()">🔁 그룹 변경 (초대코드 재입력)</button>
         </div>
+        <div class="settings-panel" id="admin-invite-panel" style="display:none">
+          <div class="sp-title">🔑 초대코드 관리 <span style="font-size:11px;background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:4px;font-weight:600">관리자 전용</span></div>
+          <div class="sp-desc">현재 초대코드: <b id="current-invite-code" style="color:var(--brand);font-size:16px;letter-spacing:2px"></b></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="copyInviteCode()">📋 코드 복사</button>
+            <button class="btn btn-danger btn-sm" onclick="regenInviteCode()">🔄 새 코드 발급</button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">⚠️ 새 코드 발급 시 기존 코드로는 가입 불가합니다</div>
+        </div>
       </div>
 
       <div class="page" id="page-archive">
@@ -1748,28 +1757,52 @@ async function renderArchive() {
       el.innerHTML = '<div class="empty"><div class="empty-icon">🗄️</div><div class="empty-text">보관된 미팅이 없습니다</div></div>';
       return;
     }
+    const isAdmin = S.currentUser === '강승윤';
     el.innerHTML = list.map(m => {
-      const hasMinutes = m.minutes_list && m.minutes_list.length > 0;
-      const minutesHtml = hasMinutes ? m.minutes_list.map(mn => `
-        <div style="background:var(--bg3);border-left:3px solid var(--brand);border-radius:8px;padding:10px 14px;margin-top:8px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">✍️ ${mn.author} · ${mn.updated_at ? new Date(mn.updated_at).toLocaleDateString() : ''}</div>
-          <div style="font-size:13px;color:var(--text);white-space:pre-wrap">${mn.content}</div>
-        </div>`).join('') : '';
+      const attendees = m.attendees || [];
+      const avatars = attendees.map(a => {
+        const n = a.user_name || a;
+        const c = getDeptColor(getUserDept(n));
+        return `<div class="avatar" style="background:${c}22;color:${c}">${n}</div>`;
+      }).join('');
+
+      const minutesHtml = (m.minutes_list && m.minutes_list.length > 0) ? `
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--brand);margin-bottom:8px">📝 회의록 (읽기 전용)</div>
+          ${m.minutes_list.map(mn => `
+            <div style="background:var(--bg3);border-left:3px solid var(--brand);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">✍️ ${mn.author} · ${mn.updated_at ? new Date(mn.updated_at).toLocaleDateString() : ''}</div>
+              <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${mn.content}</div>
+            </div>`).join('')}
+        </div>` : '<div style="font-size:12px;color:var(--text3);margin-top:8px">회의록 없음</div>';
+
+      const agendaHtml = m.agenda ? `<div class="m-agenda">${m.agenda.split('\n').map(l=>`• ${l}`).join('<br>')}</div>` : '';
+
       return `
-        <div class="meeting-card status-done" style="opacity:0.85;margin-bottom:16px">
+        <div class="meeting-card status-done" style="margin-bottom:16px">
           <div class="m-top">
             <div class="m-title">${m.title}</div>
-            <div class="m-badges"><span class="badge badge-gray">🗄️ 아카이브</span></div>
+            <div class="m-badges">
+              <span class="badge badge-gray">🗄️ 아카이브</span>
+              <span class="badge badge-green">✅ 완료</span>
+            </div>
           </div>
           <div class="m-meta">
             <span>🕐 ${fmtDt(m.datetime)}</span>
             <span>📍 ${m.location}</span>
-            <span>👤 ${m.organizer}</span>
+            <span>👑 ${m.organizer}</span>
+            ${m.zoom_link ? `<span>🔗 <a href="${m.zoom_link}" target="_blank" style="color:var(--brand)">${m.zoom_link}</a></span>` : ''}
+          </div>
+          ${agendaHtml}
+          <div class="m-footer" style="margin-top:8px">
+            <div class="avatar-stack">${avatars}</div>
+            <span style="font-size:14px;color:var(--text3);font-weight:600">${attendees.length}명</span>
           </div>
           ${minutesHtml}
+          ${isAdmin ? `
           <div class="m-actions" style="margin-top:12px;border-top:1px dashed var(--border);padding-top:12px">
-            ${(m.organizer === S.currentUser || S.currentUser === '강승윤') ? `<button class="btn btn-danger btn-sm" onclick="permanentDelete('${m.id}')">🗑 영구 삭제</button>` : ''}
-          </div>
+            <button class="btn btn-danger btn-sm" onclick="permanentDelete('${m.id}')">🗑 영구 삭제 (관리자 전용)</button>
+          </div>` : ''}
         </div>`;
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--red);padding:20px">불러오기 실패</div>'; }
@@ -2075,7 +2108,42 @@ function closeTodayModal() {
 // ═══════════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════════
-function loadSettingsPage() { document.getElementById('slack-url').value=S.slackUrl; document.getElementById('slack-channel').value=S.slackChannel; document.getElementById('server-info-text').textContent=SERVER_URL; }
+function loadSettingsPage() { 
+  document.getElementById('slack-url').value=S.slackUrl; 
+  document.getElementById('slack-channel').value=S.slackChannel; 
+  document.getElementById('server-info-text').textContent=SERVER_URL;
+  const isAdmin = S.currentUser === '강승윤';
+  const adminPanel = document.getElementById('admin-invite-panel');
+  if(isAdmin) {
+    adminPanel.style.display = 'block';
+    loadInviteCode();
+  } else {
+    adminPanel.style.display = 'none';
+  }
+}
+
+async function loadInviteCode() {
+  try {
+    const res = await api('GET', '/company/invite-code');
+    if(res.inviteCode) document.getElementById('current-invite-code').textContent = res.inviteCode;
+  } catch(e) {}
+}
+
+function copyInviteCode() {
+  const code = document.getElementById('current-invite-code').textContent;
+  navigator.clipboard.writeText(code).then(() => toast('초대코드가 복사되었습니다', 'success'));
+}
+
+async function regenInviteCode() {
+  if(!confirm('새 초대코드를 발급하면 기존 코드로는 가입할 수 없습니다. 계속할까요?')) return;
+  try {
+    const res = await api('POST', '/company/regen-invite');
+    if(res.inviteCode) {
+      document.getElementById('current-invite-code').textContent = res.inviteCode;
+      toast(`새 초대코드: ${res.inviteCode}`, 'success');
+    }
+  } catch(e) { toast('오류 발생', 'error'); }
+}
 function saveSlack() { S.slackUrl=document.getElementById('slack-url').value.trim(); S.slackChannel=document.getElementById('slack-channel').value.trim(); localStorage.setItem('ma_slack_url',S.slackUrl); localStorage.setItem('ma_slack_ch',S.slackChannel); document.getElementById('slack-status').innerHTML='<div class="sp-status ok">✅ Saved</div>'; toast('Saved','success'); }
 async function testSlack() { if(!S.slackUrl){ toast('Error','error'); return; } const status=await invokeIpc('slack-webhook',{webhookUrl:S.slackUrl,text:'🔔 Test!'}); const el=document.getElementById('slack-status'); if(status===200){ el.innerHTML='<div class="sp-status ok">✅ Success</div>'; toast('Success','success'); } else { el.innerHTML=`<div class="sp-status err">❌ Fail (${status})</div>`; } }
 function saveServerIpFromSettings() { 
