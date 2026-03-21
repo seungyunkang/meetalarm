@@ -81,6 +81,15 @@ async function initDB() {
       company_id TEXT,
       PRIMARY KEY (id, company_id)
     );
+
+    CREATE TABLE IF NOT EXISTS schedule_comments (
+      id TEXT PRIMARY KEY,
+      schedule_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      author TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
   `);
   console.log('DB 초기화 완료');
 }
@@ -340,6 +349,47 @@ const httpServer = http.createServer(async (req, res) => {
         [key, companyId, JSON.stringify(b)]
       );
       broadcast(companyId, { event: 'recurring_updated' });
+      return send({ ok: true });
+    }
+
+    // ── 정기 미팅 완료 처리 ──────────────────────
+    if (req.method === 'POST' && url.startsWith('/api/recurring/completed')) {
+      const { id } = await getBody();
+      await pool.query(
+        'INSERT INTO recurring_completed(id,company_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
+        [id, companyId]
+      );
+      broadcast(companyId, { event: 'recurring_updated' });
+      return send({ ok: true });
+    }
+
+    // ── 일정 댓글 ───────────────────────────────
+    if (req.method === 'GET' && url.includes('/comments')) {
+      const schId = url.split('/')[3];
+      const { rows } = await pool.query(
+        'SELECT * FROM schedule_comments WHERE schedule_id=$1 AND company_id=$2 ORDER BY created_at ASC',
+        [schId, companyId]
+      );
+      return send(rows);
+    }
+
+    if (req.method === 'POST' && url.includes('/comments')) {
+      const schId = url.split('/')[3];
+      const { author, content } = await getBody();
+      const id = 'cmt_' + Date.now();
+      await pool.query(
+        'INSERT INTO schedule_comments(id,schedule_id,company_id,author,content,created_at) VALUES($1,$2,$3,$4,$5,NOW())',
+        [id, schId, companyId, author, content]
+      );
+      broadcast(companyId, { event: 'schedules_updated' });
+      return send({ ok: true });
+    }
+
+    if (req.method === 'DELETE' && url.includes('/comments/')) {
+      const parts = url.split('/');
+      const cmtId = parts.pop();
+      await pool.query('DELETE FROM schedule_comments WHERE id=$1 AND company_id=$2', [cmtId, companyId]);
+      broadcast(companyId, { event: 'schedules_updated' });
       return send({ ok: true });
     }
 
