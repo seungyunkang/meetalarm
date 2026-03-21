@@ -233,8 +233,10 @@ const httpServer = http.createServer(async (req, res) => {
 
     if (req.method === 'PUT' && url.includes('/complete')) {
       const id = url.split('/')[3];
+      const { rows } = await pool.query('SELECT * FROM meetings WHERE id=$1 AND company_id=$2', [id, companyId]);
       await pool.query('UPDATE meetings SET completed=1 WHERE id=$1 AND company_id=$2', [id, companyId]);
-      broadcast(companyId, { event: 'meeting_ended', data: { id } });
+      const meetingData = rows.length ? { ...rows[0], attendees: JSON.parse(rows[0].attendees || '[]') } : { id };
+      broadcast(companyId, { event: 'meeting_ended', data: meetingData });
       return send({ ok: true });
     }
 
