@@ -1680,29 +1680,23 @@ async function endMeeting(id) {
         const hasMinutes = m2 && m2.minutes_list && m2.minutes_list.length > 0;
 
         if(hasMinutes) {
-            // 회의록 있으면 일반 미팅으로 DB에 저장 후 아카이브로 이동
             if(!confirm('회의록이 있습니다. 아카이브로 보관할까요?')) return;
             try {
-                // 정기 미팅 인스턴스를 일반 미팅으로 저장 후 아카이브
-                const r = await api('POST', '/meetings', {
+                // 저장+아카이브 한번에 처리 (대시보드에 안 보이게)
+                const saveRes = await api('POST', '/meetings/save-and-archive', {
                     title: m2.title,
                     datetime: m2.datetime,
                     location: m2.location,
                     organizer: m2.organizer,
                     attendees: m2.attendees || [],
                     alarm1: m2.alarm1 || 60,
-                    agenda: m2.agenda || ''
+                    agenda: m2.agenda || '',
+                    minutes_list: m2.minutes_list
                 });
-                // 저장된 미팅에 회의록 붙이기
-                const newId = (await api('GET', '/meetings')).find(x => x.title === m2.title && x.datetime === m2.datetime)?.id;
-                if(newId) {
-                    await api('PUT', `/meetings/${newId}/minutes_list`, { minutes_list: m2.minutes_list });
-                    await api('PUT', `/meetings/${newId}/archive`);
-                }
-                // 정기 미팅 완료 처리
                 await api('POST', `/recurring/completed`, { id });
                 S.recurringCompleted.push(id);
                 if(m2) fireEndedNotif(m2);
+                await loadMeetings();
                 toast('회의록이 아카이브로 보관되었습니다', 'info');
                 renderDashboard(); updateBadges();
             } catch(e) { toast('API 오류', 'error'); }

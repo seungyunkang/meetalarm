@@ -176,6 +176,22 @@ const httpServer = http.createServer(async (req, res) => {
     if (!companyId) return send({ error: '접근 권한 없음' }, 403);
 
     // ── 미팅 ────────────────────────────────────
+    // 정기 미팅 회의록 아카이브 - 저장과 동시에 archived=1
+    if (req.method === 'POST' && url === '/api/meetings/save-and-archive') {
+      const b = await getBody();
+      const id = 'meet_' + Date.now();
+      await pool.query(
+        `INSERT INTO meetings(id,company_id,title,datetime,location,organizer,attendees,alarm1,agenda,zoom_link,minutes_list,archived)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,1)`,
+        [id, companyId, b.title, b.datetime, b.location, b.organizer,
+         JSON.stringify(b.attendees || []), b.alarm1, b.agenda, b.zoomLink || '',
+         JSON.stringify(b.minutes_list || [])]
+      );
+      // 아카이브 저장이라 대시보드엔 안 보임, 종료 알림만 broadcast
+      broadcast(companyId, { event: 'meeting_ended', data: { ...b, id } });
+      return send({ ok: true, id });
+    }
+
     if (req.method === 'GET' && url === '/api/meetings') {
       const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND (archived IS NULL OR archived=0)', [companyId]);
       return send(rows.map(r => ({ 
