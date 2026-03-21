@@ -52,7 +52,8 @@ async function initDB() {
       archived INTEGER DEFAULT 0,
       alarm1 INTEGER DEFAULT 60,
       agenda TEXT,
-      zoom_link TEXT
+      zoom_link TEXT,
+      minutes_list TEXT
     );
 
     CREATE TABLE IF NOT EXISTS schedules (
@@ -93,8 +94,8 @@ async function initDB() {
     );
   `);
   console.log('DB 초기화 완료');
-  // 기존 DB에 archived 컬럼 없을 경우 추가
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
+  try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS minutes_list TEXT'); } catch(e) {}
 }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -177,7 +178,30 @@ const httpServer = http.createServer(async (req, res) => {
     // ── 미팅 ────────────────────────────────────
     if (req.method === 'GET' && url === '/api/meetings') {
       const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND (archived IS NULL OR archived=0)', [companyId]);
-      return send(rows.map(r => ({ ...r, attendees: JSON.parse(r.attendees || '[]') })));
+      return send(rows.map(r => ({ 
+        ...r, 
+        attendees: JSON.parse(r.attendees || '[]'),
+        minutes_list: r.minutes_list ? JSON.parse(r.minutes_list) : []
+      })));
+    }
+
+    // 아카이브 미팅 조회 시에도 minutes_list 포함
+    if (req.method === 'GET' && url === '/api/meetings/archived') {
+      const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND archived=1 ORDER BY datetime DESC', [companyId]);
+      return send(rows.map(r => ({ 
+        ...r, 
+        attendees: JSON.parse(r.attendees || '[]'),
+        minutes_list: r.minutes_list ? JSON.parse(r.minutes_list) : []
+      })));
+    }
+
+    // 회의록 저장 API
+    if (req.method === 'PUT' && url.includes('/minutes_list')) {
+      const id = url.split('/')[3];
+      const { minutes_list } = await getBody();
+      await pool.query('UPDATE meetings SET minutes_list=$1 WHERE id=$2 AND company_id=$3', [JSON.stringify(minutes_list), id, companyId]);
+      broadcast(companyId, { event: 'meeting_updated', data: { id } });
+      return send({ ok: true });
     }
 
     if (req.method === 'POST' && url === '/api/meetings') {
@@ -207,15 +231,10 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'GET' && url === '/api/meetings/archived') {
-      const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND archived=1 ORDER BY datetime DESC', [companyId]);
-      return send(rows.map(r => ({ ...r, attendees: JSON.parse(r.attendees || '[]') })));
-    }
-
     if (req.method === 'PUT' && url.includes('/complete')) {
       const id = url.split('/')[3];
       await pool.query('UPDATE meetings SET completed=1 WHERE id=$1 AND company_id=$2', [id, companyId]);
-      broadcast(companyId, { event: 'meeting_updated', data: { id } });
+      broadcast(companyId, { event: 'meeting_ended', data: { id } });
       return send({ ok: true });
     }
 
