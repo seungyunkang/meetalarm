@@ -49,6 +49,7 @@ async function initDB() {
       organizer TEXT,
       attendees TEXT,
       completed INTEGER DEFAULT 0,
+      archived INTEGER DEFAULT 0,
       alarm1 INTEGER DEFAULT 60,
       agenda TEXT,
       zoom_link TEXT
@@ -92,6 +93,8 @@ async function initDB() {
     );
   `);
   console.log('DB 초기화 완료');
+  // 기존 DB에 archived 컬럼 없을 경우 추가
+  try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
 }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -160,7 +163,7 @@ const httpServer = http.createServer(async (req, res) => {
 
     // ── 미팅 ────────────────────────────────────
     if (req.method === 'GET' && url === '/api/meetings') {
-      const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1', [companyId]);
+      const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND (archived IS NULL OR archived=0)', [companyId]);
       return send(rows.map(r => ({ ...r, attendees: JSON.parse(r.attendees || '[]') })));
     }
 
@@ -176,11 +179,24 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'DELETE' && url.startsWith('/api/meetings/') && !url.includes('/alarm') && !url.includes('/complete') && !url.includes('/leave') && !url.includes('/hide')) {
+    if (req.method === 'DELETE' && url.startsWith('/api/meetings/') && !url.includes('/alarm') && !url.includes('/complete') && !url.includes('/leave') && !url.includes('/hide') && !url.includes('/archive')) {
       const id = url.split('/').pop();
       await pool.query('DELETE FROM meetings WHERE id=$1 AND company_id=$2', [id, companyId]);
       broadcast(companyId, { event: 'meeting_deleted', data: { id } });
       return send({ ok: true });
+    }
+
+    // ── 아카이브 ─────────────────────────────────
+    if (req.method === 'PUT' && url.includes('/archive')) {
+      const id = url.split('/')[3];
+      await pool.query('UPDATE meetings SET archived=1 WHERE id=$1 AND company_id=$2', [id, companyId]);
+      broadcast(companyId, { event: 'meeting_deleted', data: { id } });
+      return send({ ok: true });
+    }
+
+    if (req.method === 'GET' && url === '/api/meetings/archived') {
+      const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND archived=1 ORDER BY datetime DESC', [companyId]);
+      return send(rows.map(r => ({ ...r, attendees: JSON.parse(r.attendees || '[]') })));
     }
 
     if (req.method === 'PUT' && url.includes('/complete')) {

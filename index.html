@@ -448,6 +448,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <button class="nav-btn" id="nav-settings" onclick="goto('settings')">
         <div class="nav-icon">⚙️</div><span data-i18n="nav_settings">연동 설정</span>
       </button>
+      <button class="nav-btn" id="nav-archive" onclick="goto('archive')">
+        <div class="nav-icon">🗄️</div><span>아카이브</span>
+      </button>
 
       <button class="nav-btn" id="nav-today" onclick="openTodayModal()" style="margin-top:20px; border:1px solid var(--brand); color:var(--brand); background:var(--brand-glow);">
         <div class="nav-icon" style="background:transparent;">⭐</div><span data-i18n="nav_today">오늘 내 일정</span>
@@ -621,6 +624,17 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
           <div class="sp-desc">현재 서버: <b id="server-info-text"></b></div>
           <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="changeCompany()">🔁 그룹 변경 (초대코드 재입력)</button>
         </div>
+      </div>
+
+      <div class="page" id="page-archive">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🗄️ 아카이브</div>
+            <div class="page-sub">회의록이 있는 삭제된 미팅이 보관됩니다</div>
+          </div>
+        </div>
+        <div id="archive-list"></div>
+        <div style="height:28px"></div>
       </div>
 
     </div>
@@ -1138,6 +1152,7 @@ function goto(id) {
   if(id==='members') renderMembers(); 
   if(id==='settings') loadSettingsPage();
   if(id==='recurring') renderRecurringTemplates();
+  if(id==='archive') renderArchive();
 }
 
 function setFilter(f) {
@@ -1710,10 +1725,63 @@ async function sendSlackAlarm(m, type) {
 
 async function deleteMeeting(id) {
   const m = S.meetings.find(x => String(x.id) === String(id)); if(!m) return;
-  if(!confirm(`"${m.title}" ${g_lang==='ko'?'미팅을 삭제할까요? 이 작업은 되돌릴 수 세 없습니다.':'Delete? Cannot be undone.'}`)) return;
-  try { await api('DELETE', `/meetings/${id}`); } catch(e) { console.log(e); } 
-  S.meetings = S.meetings.filter(x => String(x.id) !== String(id)); 
-  renderDashboard(); updateBadges(); toast(g_lang==='ko'?'삭제되었습니다':'Deleted', 'info'); 
+  const hasMinutes = m.minutes_list && m.minutes_list.length > 0;
+  if(hasMinutes) {
+    if(!confirm(`"${m.title}" 미팅에 회의록이 있습니다.\n삭제하면 아카이브로 이동됩니다. 계속할까요?`)) return;
+    try { await api('PUT', `/meetings/${id}/archive`); } catch(e) { console.log(e); }
+    S.meetings = S.meetings.filter(x => String(x.id) !== String(id));
+    renderDashboard(); updateBadges(); toast('아카이브로 이동되었습니다', 'info');
+  } else {
+    if(!confirm(`"${m.title}" ${g_lang==='ko'?'미팅을 영구 삭제할까요? 되돌릴 수 없습니다.':'Delete permanently? Cannot be undone.'}`)) return;
+    try { await api('DELETE', `/meetings/${id}`); } catch(e) { console.log(e); }
+    S.meetings = S.meetings.filter(x => String(x.id) !== String(id));
+    renderDashboard(); updateBadges(); toast(g_lang==='ko'?'삭제되었습니다':'Deleted', 'info');
+  }
+}
+
+async function renderArchive() {
+  const el = document.getElementById('archive-list');
+  el.innerHTML = '<div style="color:var(--text3);padding:20px">불러오는 중...</div>';
+  try {
+    const list = await api('GET', '/meetings/archived');
+    if(!list || list.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🗄️</div><div class="empty-text">보관된 미팅이 없습니다</div></div>';
+      return;
+    }
+    el.innerHTML = list.map(m => {
+      const hasMinutes = m.minutes_list && m.minutes_list.length > 0;
+      const minutesHtml = hasMinutes ? m.minutes_list.map(mn => `
+        <div style="background:var(--bg3);border-left:3px solid var(--brand);border-radius:8px;padding:10px 14px;margin-top:8px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">✍️ ${mn.author} · ${mn.updated_at ? new Date(mn.updated_at).toLocaleDateString() : ''}</div>
+          <div style="font-size:13px;color:var(--text);white-space:pre-wrap">${mn.content}</div>
+        </div>`).join('') : '';
+      return `
+        <div class="meeting-card status-done" style="opacity:0.85;margin-bottom:16px">
+          <div class="m-top">
+            <div class="m-title">${m.title}</div>
+            <div class="m-badges"><span class="badge badge-gray">🗄️ 아카이브</span></div>
+          </div>
+          <div class="m-meta">
+            <span>🕐 ${fmtDt(m.datetime)}</span>
+            <span>📍 ${m.location}</span>
+            <span>👤 ${m.organizer}</span>
+          </div>
+          ${minutesHtml}
+          <div class="m-actions" style="margin-top:12px;border-top:1px dashed var(--border);padding-top:12px">
+            ${(m.organizer === S.currentUser || S.currentUser === '강승윤') ? `<button class="btn btn-danger btn-sm" onclick="permanentDelete('${m.id}')">🗑 영구 삭제</button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);padding:20px">불러오기 실패</div>'; }
+}
+
+async function permanentDelete(id) {
+  if(!confirm('영구 삭제하면 복구할 수 없습니다. 삭제할까요?')) return;
+  try {
+    await api('DELETE', `/meetings/${id}`);
+    toast('영구 삭제되었습니다', 'info');
+    renderArchive();
+  } catch(e) { toast('오류 발생', 'error'); }
 }
 async function leaveMeeting(id) {
   if(!confirm(g_lang==='ko'?'참석을 취소하시겠습니까?':'Cancel attendance?')) return;
