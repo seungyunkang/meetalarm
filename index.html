@@ -1133,8 +1133,11 @@ function connectWS() {
     if(msg.event==='meeting_deleted') { await loadMeetings(); renderDashboard(); updateBadges(); }
     if(msg.event==='meeting_ended') { 
       await loadMeetings(); renderDashboard(); updateBadges();
-      const m = S.meetings.find(x => String(x.id) === String(msg.data.id));
-      if(m && isAttending(m, S.currentUser) && m.organizer !== S.currentUser) fireEndedNotif(m);
+      const m = msg.data;
+      // 주최자 본인 제외 참석자들한테 알람
+      if(m && m.organizer !== S.currentUser && isAttending(m, S.currentUser)) {
+        fireEndedNotif(m);
+      }
     }
     if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
@@ -1392,7 +1395,13 @@ function renderDashboard() {
           virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 4));
       });
   }
-  const combinedMeetings = [...S.meetings, ...virtualMeetings];
+  // 중복 ID 제거
+  const seen = new Set();
+  const combinedMeetings = [...S.meetings, ...virtualMeetings].filter(m => {
+    if(seen.has(String(m.id))) return false;
+    seen.add(String(m.id));
+    return true;
+  });
 
   const visibleMeetings = combinedMeetings.filter(m => isVisible(m, cu)); 
   const activeMeetings = showHidden ? visibleMeetings : visibleMeetings.filter(m => !S.hiddenIds.has(String(m.id)));
@@ -1454,10 +1463,10 @@ function renderCard(m, now, cu) {
       actions = `<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();openOverrideModal('${m.recId}', '${m.dateStr}')">✏️ ${g_lang==='ko'?'이번회차 수정':'Modify This'}</button>` + actions;
   }
 
-  if((isLive || isPast) && isOrg && !isComp) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
-  
-  // 정기 미팅도 시간 지나면 종료 버튼 표시
-  if(isRec && (isLive || isPast) && isOrg && !isComp) actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
+  // 일정 종료 버튼 - 정기/일반 미팅 공통, 중복 없이 한 번만
+  if((isLive || isPast) && isOrg && !isComp) {
+    actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
+  }
   
   if(isHidden) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--brand);font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();unhideMeeting('${m.id}')">👁 ${g_lang==='ko'?'숨기기 취소':'Unhide'}</button>`;
   else actions += `<button class="btn btn-ghost btn-sm" style="font-size:13px" onclick="event.stopPropagation();hideMeeting('${m.id}')">🙈 ${g_lang==='ko'?'숨기기':'Hide'}</button>`;
@@ -1717,11 +1726,12 @@ async function endMeeting(id) {
       // 회의록 있으면 아카이브로 이동
       try { await api('PUT', `/meetings/${id}/archive`); } catch(e) { console.log(e); }
       S.meetings = S.meetings.filter(x => String(x.id) !== String(id));
+      if(m) fireEndedNotif(m);
       renderDashboard(); updateBadges(); toast('회의록이 아카이브로 보관되었습니다', 'info');
     } else {
       // 회의록 없으면 완료 처리
       try { await api('PUT',`/meetings/${id}/complete`); } catch(e) { console.log(e); } 
-      if(m) m.completed = 1; 
+      if(m) { m.completed = 1; fireEndedNotif(m); }
       renderDashboard(); updateBadges(); toast(g_lang==='ko'?'종료되었습니다':'Ended','success');
     }
 }

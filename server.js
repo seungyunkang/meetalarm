@@ -226,8 +226,10 @@ const httpServer = http.createServer(async (req, res) => {
     // ── 아카이브 ─────────────────────────────────
     if (req.method === 'PUT' && url.includes('/archive')) {
       const id = url.split('/')[3];
+      const { rows } = await pool.query('SELECT * FROM meetings WHERE id=$1 AND company_id=$2', [id, companyId]);
       await pool.query('UPDATE meetings SET archived=1 WHERE id=$1 AND company_id=$2', [id, companyId]);
-      broadcast(companyId, { event: 'meeting_deleted', data: { id } });
+      const meetingData = rows.length ? { ...rows[0], attendees: JSON.parse(rows[0].attendees || '[]') } : { id };
+      broadcast(companyId, { event: 'meeting_ended', data: meetingData });
       return send({ ok: true });
     }
 
