@@ -942,10 +942,14 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
+    
+    <button class="mobile-tab" id="mobile-nav-settings" style="display:none;background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('settings');toggleMobileMore()">
+      <span class="mobile-tab-icon">⚙️</span><span>연동설정</span>
+    </button>
+
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleLang();toggleMobileMore()">
       <span class="mobile-tab-icon">🌐</span><span>언어</span>
-    </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
+    </button>    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
       <span class="mobile-tab-icon">🌙</span><span>테마</span>
     </button>
     <button class="mobile-tab" style="background:var(--red-bg);border-radius:12px;padding:12px 8px;color:var(--red)" onclick="doLogout()">
@@ -1264,6 +1268,10 @@ buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderD
   if (checkAdmin(S.currentUser)) { 
     document.getElementById('btn-add-dept').style.display = 'inline-block';
     document.getElementById('nav-settings').style.display = 'flex';
+    
+    // ★ 추가: 관리자인 경우 모바일 더보기 메뉴의 연동설정 버튼도 표시
+    const mobileSetBtn = document.getElementById('mobile-nav-settings');
+    if(mobileSetBtn) mobileSetBtn.style.display = 'flex'; 
   }
 }
 
