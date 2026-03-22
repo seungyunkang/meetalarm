@@ -923,11 +923,11 @@ function applyLang() {
 window.addEventListener('DOMContentLoaded', () => { const current = document.documentElement.getAttribute('data-theme'); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = current === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; });
 function toggleTheme() { const current = document.documentElement.getAttribute('data-theme'); const next = current === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('ma_theme', next); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = next === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; }
 
-let ipcRenderer;
-try { const {ipcRenderer:ipc}=require('electron'); ipcRenderer=ipc; } catch(e){ ipcRenderer=null; }
-function sendIpc(ch,d){ if(ipcRenderer) ipcRenderer.send(ch,d); }
-async function invokeIpc(ch,d){ if(ipcRenderer) return ipcRenderer.invoke(ch,d); return null; }
-function openExternalLink(url) { if(!url) return; const full = url.startsWith('http') ? url : 'https://' + url; sendIpc('open-external', full); if(!ipcRenderer) window.open(full, '_blank'); }
+// Electron 환경에서는 preload.js의 electronAPI 사용, 웹에서는 null
+const _eAPI = (typeof window !== 'undefined' && window.electronAPI) ? window.electronAPI : null;
+function sendIpc(ch,d){ if(_eAPI) _eAPI.send(ch,d); }
+async function invokeIpc(ch,d){ if(_eAPI) return _eAPI.invoke(ch,d); return null; }
+function openExternalLink(url) { if(!url) return; const full = url.startsWith('http') ? url : 'https://' + url; sendIpc('open-external', full); if(!_eAPI) window.open(full, '_blank'); }
 
 // ═══════════════════════════════════════════════
 // GLOBAL STATE
