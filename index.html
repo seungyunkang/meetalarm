@@ -1758,6 +1758,8 @@ function renderRecSelChips() { const el=document.getElementById('rec-sel-chips')
 // ═══════════════════════════════════════════════
 // 🔴 3. 회의록 (독립 저장) & 종료 처리 로직
 // ═══════════════════════════════════════════════
+let _currentMinutesList = [];
+
 async function openMinutesModal(id) {
   let m = S.meetings.find(x => String(x.id) === String(id)); 
   if(!m && id.startsWith('rec_')) {
@@ -1773,18 +1775,19 @@ async function openMinutesModal(id) {
   document.getElementById('minutes-content').value = '';
   document.getElementById('minutes-modal-subtitle').innerHTML = `<b>${g_lang==='ko'?'회의':'Meeting'}:</b> ${m.title} <span style="margin-left:12px"><b>${g_lang==='ko'?'일시':'Time'}:</b> ${fmtDt(m.datetime)}</span>`; 
   
-  // 정기미팅은 서버에서 회의록 불러오기
   let history = [];
   if(id.startsWith('rec_')) {
     try {
       const rows = await api('GET', `/recurring/minutes/${encodeURIComponent(id)}`);
       history = rows || [];
-      m.minutes_list = history; // 로컬 캐시
+      m.minutes_list = history; 
     } catch(e) { history = m.minutes_list || []; }
   } else {
     history = m.minutes_list || [];
   }
   
+  _currentMinutesList = history;
+
   const listEl = document.getElementById('minutes-history-list');
   if (history.length === 0) {
       listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:20px;">${g_lang==='ko'?'아직 작성된 회의록이 없습니다.':'No minutes recorded yet.'}</div>`;
@@ -1810,16 +1813,7 @@ async function openMinutesModal(id) {
 }
 
 function editMinute(minId) {
-    const mId = document.getElementById('minutes-meeting-id').value;
-    let m = S.meetings.find(x => String(x.id) === String(mId));
-    if(!m && mId.startsWith('rec_')) {
-        let virtualMeetings = [];
-        S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
-        m = virtualMeetings.find(x=>String(x.id)===String(mId));
-    }
-    if(!m || !m.minutes_list) return;
-    
-    const entry = m.minutes_list.find(h => String(h.id) === String(minId));
+    const entry = _currentMinutesList.find(h => String(h.id) === String(minId));
     if(entry) {
         document.getElementById('minutes-edit-id').value = entry.id;
         document.getElementById('minutes-content').value = entry.content;
@@ -1832,33 +1826,26 @@ async function deleteMinute(minId) {
     if(!confirm('이 회의록 기록을 삭제하시겠습니까?')) return;
     
     const mId = document.getElementById('minutes-meeting-id').value;
-    let m = S.meetings.find(x => String(x.id) === String(mId));
-    if(!m && mId.startsWith('rec_')) {
-        let virtualMeetings = [];
-        S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
-        m = virtualMeetings.find(x=>String(x.id)===String(mId));
-    }
-    if(!m || !m.minutes_list) return;
-
-    m.minutes_list = m.minutes_list.filter(h => String(h.id) !== String(minId));
+    _currentMinutesList = _currentMinutesList.filter(h => String(h.id) !== String(minId));
 
     if(mId.startsWith('rec_')) {
-        // 정기미팅 삭제 API 호출
         try { await api('DELETE', `/recurring/minutes/${minId}`); } catch(e) { console.error(e); }
         let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
-        localMin[mId] = { minutes_list: m.minutes_list }; 
+        localMin[mId] = { minutes_list: _currentMinutesList }; 
         localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
     } else {
-        try { await api('PUT',`/meetings/${mId}/minutes_list`, { minutes_list: m.minutes_list }); } catch(e) { 
+        let m = S.meetings.find(x => String(x.id) === String(mId));
+        if(m) m.minutes_list = _currentMinutesList;
+        try { await api('PUT',`/meetings/${mId}/minutes_list`, { minutes_list: _currentMinutesList }); } catch(e) { 
             let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
-            localMin[mId] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
+            localMin[mId] = { minutes_list: _currentMinutesList }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
         }
     }
     await openMinutesModal(mId); 
     toast('삭제되었습니다', 'info');
-    // 삭제 시에도 메인 버튼 색상 원복을 위해 호출
     if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
+
 function closeMinutesModal() { document.getElementById('minutes-modal-overlay').classList.remove('show'); }
 
 async function saveMinutes() {
@@ -1870,20 +1857,24 @@ async function saveMinutes() {
   if(!content) return toast('내용을 입력하세요','error');
 
   if(id.startsWith('rec_')) {
-    // 정기미팅 회의록 → 서버에 저장
     try {
       await api('POST', `/recurring/minutes/${encodeURIComponent(id)}`, { author: cu, content, editId: editId || null });
       document.getElementById('minutes-edit-id').value = '';
       document.getElementById('minutes-content').value = '';
+      
+      // UI 즉시 업데이트를 위해 로컬 캐시에 더미 데이터 삽입
+      let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}');
+      if(!localMin[id]) localMin[id] = { minutes_list: [] };
+      if(localMin[id].minutes_list.length === 0) localMin[id].minutes_list.push({ id: 'dummy' });
+      localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
+
       await openMinutesModal(id);
       toast('저장되었습니다', 'success');
-      // UI 즉시 업데이트 (버튼 색상 변경용)
       if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
     } catch(e) { toast('저장 실패', 'error'); }
     return;
   }
 
-  // 일반 미팅 회의록
   let m = S.meetings.find(x => String(x.id) === String(id));
   if(!m) return;
   if(!m.minutes_list) m.minutes_list = [];
@@ -1904,10 +1895,8 @@ async function saveMinutes() {
   document.getElementById('minutes-content').value = '';
   await openMinutesModal(id); 
   toast('저장되었습니다', 'success'); 
-  // UI 즉시 업데이트
   if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
-
 async function endMeeting(id) { 
     if(!confirm(g_lang==='ko'?'일정을 종료할까요?':'End meeting?')) return; 
     
@@ -2257,14 +2246,12 @@ function renderSchCalendar() {
         });
         
         let eventsHtml = daySchedules.map(sch => {
-            const visClass = sch.visibility; 
-            const dotColor = visClass==='private'?'var(--teal)':visClass==='team'?'var(--brand)':'var(--amber)';
+            const isMine = sch.author === S.currentUser;
+            const bgClass = isMine ? 'rgba(27,181,184,0.15)' : 'var(--bg3)';
+            const borderCol = isMine ? 'var(--brand)' : 'var(--border3)';
+            const txtCol = isMine ? 'var(--text)' : 'var(--text2)';
             
-            const initial = sch.author ? sch.author.charAt(0) : '';
-            const c = getDeptColor(getUserDept(sch.author)) || dotColor;
-            const avatar = visClass !== 'private' ? `<div style="min-width:15px;height:15px;border-radius:50%;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px;flex-shrink:0;">${initial}</div>` : `<span class="cal-ev-dot" style="background:${dotColor};margin-top:4px;"></span>`;
-
-            return `<div class="sch-ev ${visClass}">${avatar}<div class="sch-text-wrap" style="-webkit-line-clamp:2;flex:1;">${sch.content}</div></div>`;
+            return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:4px 6px; font-weight:${isMine?'700':'500'};" title="${sch.content}">${sch.content}</div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
     }
