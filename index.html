@@ -331,51 +331,40 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .main{flex:1;overflow:auto;padding-bottom:70px}
   .content-area{padding:16px;height:auto;overflow:visible}
   .mobile-tabbar{display:block}
-  
-  /* 페이지 타이틀 */
   .page-title{font-size:20px}
   .page-sub{font-size:13px}
   .page-header{margin-bottom:16px}
-  
-  /* 미팅 카드 */
   #meeting-list{grid-template-columns:1fr !important}
   .meeting-card{padding:14px}
   .m-title{font-size:15px}
   .m-meta{font-size:13px;gap:8px}
   .m-actions{display:flex;flex-wrap:wrap;gap:6px}
   .btn-sm{padding:8px 12px;font-size:12px}
-  
-  /* 통계 카드 */
   .stats-row{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-  .stat-num{font-size:24px}
-  .stat-label{font-size:10px}
-  
-  /* 폼 */
+  .stat-num{font-size:22px}
+  .stat-label{font-size:9px}
   .form-card{padding:14px}
   .form-row-2{grid-template-columns:1fr}
-  .form-input{font-size:16px;padding:10px 12px} /* iOS 확대 방지 */
+  .form-input{font-size:16px;padding:10px 12px}
   .btn-full{padding:14px}
-  
-  /* 달력 */
-  .cal-body{grid-auto-rows:minmax(70px,auto)}
-  .cal-date{font-size:13px}
-  .cal-ev{font-size:11px}
-  
-  /* 구성원 */
+  /* 달력 최적화 - 셀 작게, 텍스트 작게 */
+  .cal-controls{font-size:14px;gap:6px;margin-bottom:10px}
+  .cal-controls button{padding:4px 8px;font-size:13px}
+  .cal-header-row{font-size:11px;padding:5px 0}
+  .cal-body{grid-auto-rows:minmax(48px,auto)}
+  .cal-cell{padding:3px 2px;gap:1px}
+  .cal-date{font-size:11px;margin-bottom:1px}
+  .cal-ev{font-size:9px;padding:1px 3px;border-radius:3px}
+  .cal-ev .ev-time{display:none}
+  .cal-ev-list{gap:1px}
+  .sch-ev{font-size:9px;padding:2px 4px}
   .members-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
-  
-  /* 인증 화면 */
   .auth-box{width:92%;padding:24px 20px;margin:0 auto}
-  
-  /* 토스트 */
   .toasts{top:auto;bottom:80px;right:10px;left:10px}
   .toast{max-width:100%}
-  
-  /* 오버레이 모달 */
   .modal{width:96%;padding:24px 18px;max-height:90vh;overflow-y:auto}
-  
-  /* 알람바 숨기기 (공간 절약) */
   .m-alarm-bar{display:none}
+  .picker-tab{padding:4px 8px;font-size:11px}
 }
 
 </style>
@@ -927,9 +916,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <span class="mobile-tab-icon">🗓️</span>
       <span>일정</span>
     </button>
-    <button class="mobile-tab" id="mtab-members" onclick="goto('members')">
-      <span class="mobile-tab-icon">👥</span>
-      <span>구성원</span>
+    <button class="mobile-tab" id="mtab-today" onclick="openTodayModal()">
+      <span class="mobile-tab-icon">⭐</span>
+      <span>오늘</span>
     </button>
     <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
       <span class="mobile-tab-icon">☰</span>
@@ -940,20 +929,23 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 
 <!-- 모바일 더보기 메뉴 -->
 <div id="mobile-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:7999;padding:12px">
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('members');toggleMobileMore()">
+      <span class="mobile-tab-icon">👥</span><span>구성원</span>
+    </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring');toggleMobileMore()">
       <span class="mobile-tab-icon">🔁</span><span>정기미팅</span>
     </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive');toggleMobileMore()">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="openTodayModal();toggleMobileMore()">
-      <span class="mobile-tab-icon">⭐</span><span>오늘일정</span>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleLang();toggleMobileMore()">
+      <span class="mobile-tab-icon">🌐</span><span>언어</span>
     </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
       <span class="mobile-tab-icon">🌙</span><span>테마</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="doLogout()">
+    <button class="mobile-tab" style="background:var(--red-bg);border-radius:12px;padding:12px 8px;color:var(--red)" onclick="doLogout()">
       <span class="mobile-tab-icon">🚪</span><span>로그아웃</span>
     </button>
   </div>
