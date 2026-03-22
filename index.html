@@ -2,6 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>MeetAlarm - Enterprise Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -310,6 +313,70 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .toast.success{border-left:4px solid var(--green)}
 .toast.error{border-left:4px solid var(--red)}
 .toast.info{border-left:4px solid var(--brand)}
+
+/* ── 모바일 하단 탭바 ────────── */
+.mobile-tabbar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:8000;padding:6px 0 env(safe-area-inset-bottom,6px)}
+.mobile-tabbar-inner{display:flex;justify-content:space-around;align-items:center}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;min-width:52px}
+.mobile-tab.active{color:var(--brand)}
+.mobile-tab-icon{font-size:20px;line-height:1}
+.mobile-tab-badge{position:absolute;top:-2px;right:-2px;background:var(--brand);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center}
+.mobile-tab-wrap{position:relative;display:inline-flex}
+
+/* ── 모바일 미디어쿼리 ────────── */
+@media (max-width: 768px) {
+  html,body{overflow:auto}
+  .app{flex-direction:column}
+  .sidebar{display:none !important}
+  .main{flex:1;overflow:auto;padding-bottom:70px}
+  .content-area{padding:16px;height:auto;overflow:visible}
+  .mobile-tabbar{display:block}
+  
+  /* 페이지 타이틀 */
+  .page-title{font-size:20px}
+  .page-sub{font-size:13px}
+  .page-header{margin-bottom:16px}
+  
+  /* 미팅 카드 */
+  #meeting-list{grid-template-columns:1fr !important}
+  .meeting-card{padding:14px}
+  .m-title{font-size:15px}
+  .m-meta{font-size:13px;gap:8px}
+  .m-actions{display:flex;flex-wrap:wrap;gap:6px}
+  .btn-sm{padding:8px 12px;font-size:12px}
+  
+  /* 통계 카드 */
+  .stats-row{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .stat-num{font-size:24px}
+  .stat-label{font-size:10px}
+  
+  /* 폼 */
+  .form-card{padding:14px}
+  .form-row-2{grid-template-columns:1fr}
+  .form-input{font-size:16px;padding:10px 12px} /* iOS 확대 방지 */
+  .btn-full{padding:14px}
+  
+  /* 달력 */
+  .cal-body{grid-auto-rows:minmax(70px,auto)}
+  .cal-date{font-size:13px}
+  .cal-ev{font-size:11px}
+  
+  /* 구성원 */
+  .members-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  
+  /* 인증 화면 */
+  .auth-box{width:92%;padding:24px 20px;margin:0 auto}
+  
+  /* 토스트 */
+  .toasts{top:auto;bottom:80px;right:10px;left:10px}
+  .toast{max-width:100%}
+  
+  /* 오버레이 모달 */
+  .modal{width:96%;padding:24px 18px;max-height:90vh;overflow-y:auto}
+  
+  /* 알람바 숨기기 (공간 절약) */
+  .m-alarm-bar{display:none}
+}
 
 </style>
 </head>
@@ -842,6 +909,56 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <div class="overlay" id="switch-modal" style="display:none"></div>
 <div class="toasts" id="toasts"></div>
 
+<!-- 모바일 하단 탭바 -->
+<div class="mobile-tabbar" id="mobile-tabbar">
+  <div class="mobile-tabbar-inner">
+    <button class="mobile-tab active" id="mtab-dashboard" onclick="goto('dashboard')">
+      <div class="mobile-tab-wrap">
+        <span class="mobile-tab-icon">🏠</span>
+        <span class="mobile-tab-badge" id="mbadge-upcoming" style="display:none">0</span>
+      </div>
+      <span>홈</span>
+    </button>
+    <button class="mobile-tab" id="mtab-create" onclick="goto('create')">
+      <span class="mobile-tab-icon">✏️</span>
+      <span>등록</span>
+    </button>
+    <button class="mobile-tab" id="mtab-schedules" onclick="goto('schedules')">
+      <span class="mobile-tab-icon">🗓️</span>
+      <span>일정</span>
+    </button>
+    <button class="mobile-tab" id="mtab-members" onclick="goto('members')">
+      <span class="mobile-tab-icon">👥</span>
+      <span>구성원</span>
+    </button>
+    <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
+      <span class="mobile-tab-icon">☰</span>
+      <span>더보기</span>
+    </button>
+  </div>
+</div>
+
+<!-- 모바일 더보기 메뉴 -->
+<div id="mobile-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:7999;padding:12px">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring');toggleMobileMore()">
+      <span class="mobile-tab-icon">🔁</span><span>정기미팅</span>
+    </button>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive');toggleMobileMore()">
+      <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
+    </button>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="openTodayModal();toggleMobileMore()">
+      <span class="mobile-tab-icon">⭐</span><span>오늘일정</span>
+    </button>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
+      <span class="mobile-tab-icon">🌙</span><span>테마</span>
+    </button>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="doLogout()">
+      <span class="mobile-tab-icon">🚪</span><span>로그아웃</span>
+    </button>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════
 // I18N (다국어)
@@ -1165,14 +1282,31 @@ async function loadMeetings() {
 }
 
 function goto(id) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active'); document.getElementById('nav-'+id).classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); 
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active'); 
+  const navBtn = document.getElementById('nav-'+id);
+  if(navBtn) navBtn.classList.add('active');
+  
+  // 모바일 탭바 동기화
+  document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
+  const mtab = document.getElementById('mtab-'+id);
+  if(mtab) mtab.classList.add('active');
+  
+  // 더보기 메뉴 닫기
+  document.getElementById('mobile-more-menu').style.display = 'none';
+
   if(id==='dashboard') renderDashboard(); 
   if(id==='schedules') renderSchCalendar(); 
   if(id==='members') renderMembers(); 
   if(id==='settings') { if(S.currentUser !== '강승윤') { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
+}
+
+function toggleMobileMore() {
+  const menu = document.getElementById('mobile-more-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
 function setFilter(f) {
@@ -2239,7 +2373,7 @@ function saveServerIpFromSettings() {
 // ═══════════════════════════════════════════════
 // BADGES & IME 픽스
 // ═══════════════════════════════════════════════
-function updateBadges() { const now=new Date(), cu=S.currentUser; const cnt=S.meetings.filter(m=>isVisible(m,cu)&&isAttending(m,cu)&&new Date(m.datetime)>now&&!m.completed).length; const b=document.getElementById('badge-upcoming'); if(cnt>0){ b.style.display=''; b.textContent=cnt; } else b.style.display='none'; }
+function updateBadges() { const now=new Date(), cu=S.currentUser; const cnt=S.meetings.filter(m=>isVisible(m,cu)&&isAttending(m,cu)&&new Date(m.datetime)>now&&!m.completed).length; const b=document.getElementById('badge-upcoming'); const mb=document.getElementById('mbadge-upcoming'); if(cnt>0){ if(b){b.style.display='';b.textContent=cnt;} if(mb){mb.style.display='';mb.textContent=cnt;} } else { if(b)b.style.display='none'; if(mb)mb.style.display='none'; } }
 
 document.addEventListener('DOMContentLoaded',()=>{ 
   document.querySelectorAll('input,textarea').forEach(fixIme); 
