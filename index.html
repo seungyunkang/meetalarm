@@ -239,7 +239,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .overlay.show{opacity:1;pointer-events:all}
 .modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.12);transform:scale(.92);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
 .modal.minutes-lg { max-width: 750px; width: 95%; } 
-.overlay.show .modal{transform:scale(1)}
+.overlay.show .modal{transform:none; transition:none;}
 .modal.mod-first{border-top:6px solid var(--brand)}
 .modal.mod-five{border-top:6px solid var(--amber)}
 .modal.mod-start{border-top:6px solid var(--green)}
@@ -1192,8 +1192,9 @@ async function loadRecurring() {
     S.recurringTemplates = res.templates || [];
     S.recurringOverrides = res.overrides || {};
     S.recurringCompleted = res.completed || [];
+    S.recurringWithMinutes = new Set(res.withMinutes || []);
   } catch(e) {
-    S.recurringTemplates = []; S.recurringOverrides = {}; S.recurringCompleted = [];
+    S.recurringTemplates = []; S.recurringOverrides = {}; S.recurringCompleted = []; S.recurringWithMinutes = new Set();
   }
 }
 
@@ -1289,6 +1290,13 @@ function connectWS() {
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
     if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
     if(msg.event==='recurring_updated') { await loadRecurring(); renderRecurringTemplates(); renderDashboard(); }
+    if(msg.event==='recurring_minutes_updated') {
+        if(msg.data && msg.data.instanceId) {
+            if(!S.recurringWithMinutes) S.recurringWithMinutes = new Set();
+            S.recurringWithMinutes.add(msg.data.instanceId);
+            renderDashboard();
+        }
+    }
   };
   ws.onclose = () => { setConnStatus(false); setTimeout(connectWS, 3000); }; ws.onerror = () => setConnStatus(false);
 }
@@ -1410,13 +1418,23 @@ async function saveRecurringTemplate() {
   }
 }
 
+let _cachedLocalMin = null;
+let _cachedLocalMinTime = 0;
+function getCachedLocalMin() {
+  if (Date.now() - _cachedLocalMinTime > 2000) {
+    _cachedLocalMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}');
+    _cachedLocalMinTime = Date.now();
+  }
+  return _cachedLocalMin || {};
+}
+
 function generateRecurringInstances(template, count = 6) {
   const instances = [];
   let current = new Date();
   current.setHours(0,0,0,0);
   let found = 0;
   let safeLoop = 0;
-  const localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}');
+  const localMin = getCachedLocalMin();
   
   while(found < count && safeLoop < 365) {
     safeLoop++;
@@ -1460,6 +1478,9 @@ function generateRecurringInstances(template, count = 6) {
         
         const isEnded = S.recurringCompleted.includes(mId) || new Date(`${mDate}T${mTime}:00`).getTime() < Date.now() - 60*60000;
         
+        const hasServerMinutes = S.recurringWithMinutes && S.recurringWithMinutes.has(mId);
+        const hasLocalMinutes = localMin[mId] && localMin[mId].minutes_list && localMin[mId].minutes_list.length > 0;
+        
         instances.push({
           id: mId,
           recId: template.id,
@@ -1474,7 +1495,7 @@ function generateRecurringInstances(template, count = 6) {
           alarm1: template.alarm1 || 60,
           isModified: !!override,
           completed: isEnded,
-          minutes_list: localMin[mId]?.minutes_list || [] 
+          minutes_list: (hasServerMinutes || hasLocalMinutes) ? [{id:'dummy'}] : [] 
         });
         found++;
       }
@@ -1828,11 +1849,15 @@ async function deleteMinute(minId) {
     const mId = document.getElementById('minutes-meeting-id').value;
     _currentMinutesList = _currentMinutesList.filter(h => String(h.id) !== String(minId));
 
-    if(mId.startsWith('rec_')) {
+   if(mId.startsWith('rec_')) {
         try { await api('DELETE', `/recurring/minutes/${minId}`); } catch(e) { console.error(e); }
         let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
         localMin[mId] = { minutes_list: _currentMinutesList }; 
         localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
+        
+        if (_currentMinutesList.length === 0 && S.recurringWithMinutes) {
+            S.recurringWithMinutes.delete(mId);
+        }
     } else {
         let m = S.meetings.find(x => String(x.id) === String(mId));
         if(m) m.minutes_list = _currentMinutesList;
@@ -2251,7 +2276,7 @@ function renderSchCalendar() {
             const borderCol = isMine ? 'var(--brand)' : 'var(--border3)';
             const txtCol = isMine ? 'var(--text)' : 'var(--text2)';
             
-            return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:4px 6px; font-weight:${isMine?'700':'500'};" title="${sch.content}">${sch.content}</div>`;
+            return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; white-space:normal; word-break:break-all; overflow:hidden; text-overflow:ellipsis; padding:4px 6px; font-weight:${isMine?'700':'500'}; line-height:1.3;" title="${sch.content}">${sch.content}</div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
     }

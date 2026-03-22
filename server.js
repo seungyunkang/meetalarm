@@ -394,16 +394,21 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // ── 정기 미팅 ───────────────────────────────
+    
+   // ── 정기 미팅 ───────────────────────────────
     if (req.method === 'GET' && url === '/api/recurring') {
       const { rows: tRows } = await pool.query('SELECT data FROM recurring_templates WHERE company_id=$1', [companyId]);
       const { rows: oRows } = await pool.query('SELECT key,data FROM recurring_overrides WHERE company_id=$1', [companyId]);
       const { rows: cRows } = await pool.query('SELECT id FROM recurring_completed WHERE company_id=$1', [companyId]);
+      const { rows: mRows } = await pool.query('SELECT DISTINCT rec_instance_id FROM recurring_minutes WHERE company_id=$1', [companyId]);
+      
       const templates = tRows.map(r => JSON.parse(r.data));
       const overrides = {};
       oRows.forEach(r => { overrides[r.key] = JSON.parse(r.data); });
       const completed = cRows.map(r => r.id);
-      return send({ templates, overrides, completed });
+      const withMinutes = mRows.map(r => r.rec_instance_id);
+
+      return send({ templates, overrides, completed, withMinutes });
     }
 
     if (req.method === 'POST' && url === '/api/recurring/templates') {
