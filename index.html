@@ -1073,12 +1073,9 @@ function openExternalLink(url) { if(!url) return; const full = url.startsWith('h
 // 👑 관리자 확인 함수 (가장 먼저 가입한 유저 확인)
 function checkAdmin(userName) {
   if (!userName) return false;
-  if (userName === '강승윤') return true; // 기존 마스터 계정은 호환성을 위해 유지
   if (S.users && S.users.length > 0 && S.users[0].name === userName) return true;
   return false;
-}
-
-// 올바르게 수정된 코드
+}// 올바르게 수정된 코드
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
   companyId: localStorage.getItem('ma_company_id') || '', 
