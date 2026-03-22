@@ -1164,8 +1164,11 @@ async function checkInviteCode() {
   try {
     const res = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r => r.json());
     if (res.error) return alert('유효하지 않은 초대코드입니다');
+    
     S.companyId = res.id;
     localStorage.setItem('ma_company_id', res.id);
+    localStorage.setItem('ma_company_name', res.name); // ★ 회사명 저장 추가 (res.name 사용)
+
     await loadDepts().catch(()=>{});
     await loadUsers().catch(()=>{});
     showAuthScreen();
@@ -1183,8 +1186,11 @@ async function createNewCompany() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ companyName: name })
     }).then(r => r.json());
+    
     S.companyId = res.companyId;
     localStorage.setItem('ma_company_id', res.companyId);
+    localStorage.setItem('ma_company_name', name); // ★ 회사명 저장 추가 (입력한 name 사용)
+
     alert(`✅ 회사 등록 성공!\n\n초대 코드: ${res.inviteCode}\n\n이 코드를 동료들에게 공유하세요.`);
     await loadDepts().catch(()=>{});
     await loadUsers().catch(()=>{});
@@ -1192,7 +1198,6 @@ async function createNewCompany() {
   } catch(e) { alert('오류가 발생했습니다'); }
   finally { btn.disabled = false; }
 }
-
 function changeCompany() { localStorage.removeItem('ma_company_id'); location.reload(); }
 
 async function loadSchedules() { try { S.schedules = await api('GET', '/schedules') || []; } catch(e) { S.schedules = []; } loadHiddenIds(); }
@@ -1252,32 +1257,62 @@ async function doRegister() {
 function doLogout() { localStorage.removeItem('ma_user'); if(ws) ws.close(); location.reload(); }
 
 async function enterApp(userName) {
-  S.currentUser = userName; const user = S.users.find(u=>u.name===userName); S.currentDeptId = user ? user.dept_id : '';
-  document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='flex';
-  const dept = S.depts.find(d=>d.id===S.currentDeptId);
-  document.getElementById('sidebar-name').textContent = userName; document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
-  S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
-  const now = new Date(); const days=['일','월','화','수','목','금','토'];
-  // 수정된 코드: [회사명] [이름]님 형태로 변경
-const companyName = localStorage.getItem('ma_company_name') || 'Enterprise';
-document.getElementById('dash-greeting').innerHTML = 
-  `<span style="color:var(--brand); font-weight:700;">${companyName}</span> ${userName}님`;document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+  // 1. 사용자 정보 및 부서 세팅
+  S.currentUser = userName; 
+  const user = S.users.find(u=>u.name===userName); 
+  S.currentDeptId = user ? user.dept_id : '';
   
+  // 2. 화면 전환 (로그인창 숨기고 메인앱 표시)
+  document.getElementById('company-setup').style.display='none'; 
+  document.getElementById('auth-screen').style.display='none'; 
+  document.getElementById('main-app').style.display='flex';
+  
+  // 3. 사이드바 정보 업데이트
+  const dept = S.depts.find(d=>d.id===S.currentDeptId);
+  document.getElementById('sidebar-name').textContent = userName; 
+  document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
+  
+  // 4. 슬랙 연동 정보 로드
+  S.slackUrl = localStorage.getItem('ma_slack_url')||''; 
+  S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
+  
+  // 5. 날짜 정보 생성
+  const now = new Date(); 
+  const days=['일','월','화','수','목','금','토'];
+  
+  // ★ 수정 포인트: [회사명] [이름]님 형태로 대시보드 인사말 변경
+  // ma_company_name이 없을 경우 공백으로 표시됩니다.
+  const companyName = localStorage.getItem('ma_company_name') || "";
+  document.getElementById('dash-greeting').innerHTML = 
+    `<span style="color:var(--brand); font-weight:700; margin-right:5px;">${companyName}</span>${userName}님`;
+  
+  document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+  
+  // 6. 데이터 비동기 로드 (미팅, 일정, 정기미팅)
   await loadMeetings(); 
   await loadSchedules();
   await loadRecurring();
   
-buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
+  // 7. UI 컴포넌트 초기화 및 서비스 시작 (웹소켓 연결 포함)
+  buildDeptPickerChips(); 
+  buildRecDeptPickerChips(); 
+  setDefaultFormDate(); 
+  renderDashboard(); 
+  renderMembers(); 
+  updateBadges(); 
+  connectWS(); 
+  startAlarmClock();
+  
+  // 8. 관리자 권한 체크 및 전용 메뉴 활성화
   if (checkAdmin(S.currentUser)) { 
     document.getElementById('btn-add-dept').style.display = 'inline-block';
     document.getElementById('nav-settings').style.display = 'flex';
     
-    // ★ 추가: 관리자인 경우 모바일 더보기 메뉴의 연동설정 버튼도 표시
+    // 모바일 더보기 메뉴의 연동설정 버튼도 관리자라면 표시
     const mobileSetBtn = document.getElementById('mobile-nav-settings');
-    if(mobileSetBtn) mobileSetBtn.style.display = 'flex'; 
+    if(mobileSetBtn) mobileSetBtn.style.display = 'flex';
   }
 }
-
 function connectWS() {
   if(ws) ws.close();
   const wsUrl = SERVER_URL.replace('https://', 'wss://').replace('http://', 'ws://');
