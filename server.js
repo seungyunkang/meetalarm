@@ -92,6 +92,15 @@ async function initDB() {
       content TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS recurring_minutes (
+      id TEXT PRIMARY KEY,
+      rec_instance_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      author TEXT NOT NULL,
+      content TEXT NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
   `);
   console.log('DB 초기화 완료');
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
@@ -463,6 +472,41 @@ const httpServer = http.createServer(async (req, res) => {
       const cmtId = parts.pop();
       await pool.query('DELETE FROM schedule_comments WHERE id=$1 AND company_id=$2', [cmtId, companyId]);
       broadcast(companyId, { event: 'schedules_updated' });
+      return send({ ok: true });
+    }
+
+    // 정기 미팅 회의록 조회
+    if (req.method === 'GET' && url.startsWith('/api/recurring/minutes/')) {
+      const instanceId = url.split('/api/recurring/minutes/')[1];
+      const { rows } = await pool.query(
+        'SELECT * FROM recurring_minutes WHERE rec_instance_id=$1 AND company_id=$2 ORDER BY updated_at ASC',
+        [instanceId, companyId]
+      );
+      return send(rows);
+    }
+
+    // 정기 미팅 회의록 저장
+    if (req.method === 'POST' && url.startsWith('/api/recurring/minutes/')) {
+      const instanceId = url.split('/api/recurring/minutes/')[1];
+      const { author, content, editId } = await getBody();
+      if(editId) {
+        await pool.query('UPDATE recurring_minutes SET content=$1,updated_at=NOW() WHERE id=$2 AND company_id=$3', [content, editId, companyId]);
+      } else {
+        const id = 'rmin_' + Date.now();
+        await pool.query(
+          'INSERT INTO recurring_minutes(id,rec_instance_id,company_id,author,content) VALUES($1,$2,$3,$4,$5)',
+          [id, instanceId, companyId, author, content]
+        );
+      }
+      broadcast(companyId, { event: 'recurring_minutes_updated', data: { instanceId } });
+      return send({ ok: true });
+    }
+
+    // 정기 미팅 회의록 삭제
+    if (req.method === 'DELETE' && url.startsWith('/api/recurring/minutes/')) {
+      const parts = url.split('/');
+      const minId = parts.pop();
+      await pool.query('DELETE FROM recurring_minutes WHERE id=$1 AND company_id=$2', [minId, companyId]);
       return send({ ok: true });
     }
 

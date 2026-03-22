@@ -336,10 +336,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .page-header{margin-bottom:16px}
   #meeting-list{grid-template-columns:1fr !important}
   .meeting-card{padding:14px}
-  .m-title{font-size:15px}
-  .m-meta{font-size:13px;gap:8px}
-  .m-actions{display:flex;flex-wrap:wrap;gap:6px}
-  .btn-sm{padding:8px 12px;font-size:12px}
+  .m-title{font-size:15px;word-break:keep-all;overflow-wrap:break-word;white-space:normal}
+  .m-top{flex-wrap:wrap;gap:6px}
+  .m-badges{flex-shrink:0;margin-left:0}
   .stats-row{grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
   .stat-num{font-size:22px}
   .stat-label{font-size:9px}
@@ -347,17 +346,18 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .form-row-2{grid-template-columns:1fr}
   .form-input{font-size:16px;padding:10px 12px}
   .btn-full{padding:14px}
-  /* 달력 최적화 - 제목 2줄, 셀 크기 적당히 */
+  /* 달력 최적화 - 색깔 동그라미 + 내용 더 보이게 */
   .cal-controls{font-size:14px;gap:6px;margin-bottom:10px}
   .cal-controls button{padding:4px 8px;font-size:13px}
   .cal-header-row{font-size:11px;padding:5px 0}
-  .cal-body{grid-auto-rows:minmax(60px,auto)}
+  .cal-body{grid-auto-rows:minmax(70px,auto)}
   .cal-cell{padding:4px 2px;gap:2px}
   .cal-date{font-size:11px;margin-bottom:2px;padding-left:1px}
-  .cal-ev{font-size:9px;padding:2px 4px;border-radius:4px;white-space:normal !important;line-height:1.3;word-break:keep-all}
+  .cal-ev{font-size:10px;padding:2px 4px;border-radius:4px;white-space:normal !important;line-height:1.4;word-break:keep-all;display:flex;align-items:flex-start;gap:3px}
   .cal-ev .ev-time{display:none}
-  .cal-ev-list{gap:2px;max-height:none}
-  .sch-ev{font-size:9px;padding:2px 4px;white-space:normal;line-height:1.3}
+  .cal-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
+  .cal-ev-list{gap:3px;max-height:none}
+  .sch-ev{font-size:10px;padding:2px 4px;white-space:normal;line-height:1.4}
   .members-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
   .auth-box{width:92%;padding:24px 20px;margin:0 auto}
   .toasts{top:auto;bottom:80px;right:10px;left:10px}
@@ -1029,8 +1029,34 @@ function applyLang() {
   if(document.getElementById('page-schedules').classList.contains('active')) renderSchCalendar();
 }
 
-window.addEventListener('DOMContentLoaded', () => { const current = document.documentElement.getAttribute('data-theme'); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = current === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; });
 function toggleTheme() { const current = document.documentElement.getAttribute('data-theme'); const next = current === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', next); localStorage.setItem('ma_theme', next); const btn = document.getElementById('theme-toggle-btn'); if(btn) btn.innerHTML = next === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'; }
+
+document.addEventListener('DOMContentLoaded',()=>{ 
+  const current = document.documentElement.getAttribute('data-theme'); 
+  const btn = document.getElementById('theme-toggle-btn'); 
+  if(btn) btn.innerHTML = current === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드';
+});
+
+// 모바일 입력 버벅임 방지 - 단순화된 버전
+function fixIme(el){
+    if(el._imeFixed) return;
+    el._imeFixed=true;
+    el.addEventListener('keydown', e => {
+        if(e.isComposing && e.key === 'Enter') e.stopImmediatePropagation();
+    }, true);
+}
+
+function safeFocus(id){
+    // 모바일에서 강제 포커스는 키보드 문제 유발 - 비활성화
+    if(window.innerWidth > 768) {
+        setTimeout(() => {
+            try {
+                const el = typeof id === 'string' ? document.getElementById(id) : id;
+                if(el) el.focus();
+            } catch(e){}
+        }, 100);
+    }
+}
 
 // Electron 환경에서는 preload.js의 electronAPI 사용, 웹에서는 null
 const _eAPI = (typeof window !== 'undefined' && window.electronAPI) ? window.electronAPI : null;
@@ -1646,8 +1672,9 @@ function renderCalendar() {
     dayMeetings.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
     let eventsHtml = dayMeetings.map(meet => {
       const isMine = isAttending(meet, S.currentUser); const dt = new Date(meet.datetime); const p = n => String(n).padStart(2,'0'); const timeStr = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
+      const dotColor = isMine ? 'var(--brand)' : 'var(--border2)';
       const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; 
-      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="ev-time">${timeStr}</span> ${meet.title}</div>`;
+      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="cal-ev-dot" style="background:${dotColor}"></span>${meet.title}</div>`;
     }).join('');
     html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
   }
@@ -1719,7 +1746,7 @@ function renderRecSelChips() { const el=document.getElementById('rec-sel-chips')
 // ═══════════════════════════════════════════════
 // 🔴 3. 회의록 (독립 저장) & 종료 처리 로직
 // ═══════════════════════════════════════════════
-function openMinutesModal(id) {
+async function openMinutesModal(id) {
   let m = S.meetings.find(x => String(x.id) === String(id)); 
   if(!m && id.startsWith('rec_')) {
       let virtualMeetings = [];
@@ -1732,12 +1759,21 @@ function openMinutesModal(id) {
   document.getElementById('minutes-meeting-id').value = id;
   document.getElementById('minutes-edit-id').value = '';
   document.getElementById('minutes-content').value = '';
-  
   document.getElementById('minutes-modal-subtitle').innerHTML = `<b>${g_lang==='ko'?'회의':'Meeting'}:</b> ${m.title} <span style="margin-left:12px"><b>${g_lang==='ko'?'일시':'Time'}:</b> ${fmtDt(m.datetime)}</span>`; 
   
-  const listEl = document.getElementById('minutes-history-list');
-  let history = m.minutes_list || [];
+  // 정기미팅은 서버에서 회의록 불러오기
+  let history = [];
+  if(id.startsWith('rec_')) {
+    try {
+      const rows = await api('GET', `/recurring/minutes/${encodeURIComponent(id)}`);
+      history = rows || [];
+      m.minutes_list = history; // 로컬 캐시
+    } catch(e) { history = m.minutes_list || []; }
+  } else {
+    history = m.minutes_list || [];
+  }
   
+  const listEl = document.getElementById('minutes-history-list');
   if (history.length === 0) {
       listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:20px;">${g_lang==='ko'?'아직 작성된 회의록이 없습니다.':'No minutes recorded yet.'}</div>`;
   } else {
@@ -1759,7 +1795,6 @@ function openMinutesModal(id) {
       }).join('');
   }
   document.getElementById('minutes-modal-overlay').classList.add('show'); 
-  safeFocus('minutes-content'); 
 }
 
 function editMinute(minId) {
@@ -1818,13 +1853,21 @@ async function saveMinutes() {
   const cu = S.currentUser;
   
   if(!content) return toast('내용을 입력하세요','error');
-  
-  let m = S.meetings.find(x => String(x.id) === String(id));
-  if(!m && id.startsWith('rec_')) {
-      let virtualMeetings = [];
-      S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
-      m = virtualMeetings.find(x=>String(x.id)===String(id));
+
+  if(id.startsWith('rec_')) {
+    // 정기미팅 회의록 → 서버에 저장
+    try {
+      await api('POST', `/recurring/minutes/${encodeURIComponent(id)}`, { author: cu, content, editId: editId || null });
+      document.getElementById('minutes-edit-id').value = '';
+      document.getElementById('minutes-content').value = '';
+      await openMinutesModal(id);
+      toast('저장되었습니다', 'success');
+    } catch(e) { toast('저장 실패', 'error'); }
+    return;
   }
+
+  // 일반 미팅 회의록
+  let m = S.meetings.find(x => String(x.id) === String(id));
   if(!m) return;
   if(!m.minutes_list) m.minutes_list = [];
 
@@ -1835,19 +1878,14 @@ async function saveMinutes() {
       m.minutes_list.push({ id: 'min_' + Date.now() + Math.floor(Math.random()*1000), author: cu, content: content, updated_at: new Date().toISOString() });
   }
 
-  if(id.startsWith('rec_')) {
+  try { await api('PUT',`/meetings/${id}/minutes_list`, { minutes_list: m.minutes_list }); } catch(e) { 
       let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
-      localMin[id] = { minutes_list: m.minutes_list }; 
-      localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
-  } else {
-      try { await api('PUT',`/meetings/${id}/minutes_list`, { minutes_list: m.minutes_list }); } catch(e) { 
-          let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
-          localMin[id] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
-      }
+      localMin[id] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
   }
   
-  document.getElementById('minutes-edit-id').value = ''; document.getElementById('minutes-content').value = '';
-  openMinutesModal(id); 
+  document.getElementById('minutes-edit-id').value = ''; 
+  document.getElementById('minutes-content').value = '';
+  await openMinutesModal(id); 
   toast('저장되었습니다', 'success'); 
   if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
@@ -2203,8 +2241,10 @@ function renderSchCalendar() {
             if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
         });
         let eventsHtml = daySchedules.map(sch => {
-            const visClass = sch.visibility; let authorText = ''; if (visClass !== 'private') authorText = `<span class="sch-author">${sch.author}</span> `;
-            return `<div class="sch-ev ${visClass}"><div class="sch-text-wrap">${authorText}${sch.content}</div></div>`;
+            const visClass = sch.visibility; 
+            const dotColor = visClass==='private'?'var(--teal)':visClass==='team'?'var(--brand)':'var(--amber)';
+            let authorText = sch.visibility !== 'private' ? `<span style="font-weight:700">${sch.author.charAt(0)}</span> ` : '';
+            return `<div class="sch-ev ${visClass}"><span class="cal-ev-dot" style="background:${dotColor}"></span>${sch.content}</div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
     }
@@ -2478,35 +2518,24 @@ function saveServerIpFromSettings() {
 // ═══════════════════════════════════════════════
 function updateBadges() { const now=new Date(), cu=S.currentUser; const cnt=S.meetings.filter(m=>isVisible(m,cu)&&isAttending(m,cu)&&new Date(m.datetime)>now&&!m.completed).length; const b=document.getElementById('badge-upcoming'); const mb=document.getElementById('mbadge-upcoming'); if(cnt>0){ if(b){b.style.display='';b.textContent=cnt;} if(mb){mb.style.display='';mb.textContent=cnt;} } else { if(b)b.style.display='none'; if(mb)mb.style.display='none'; } }
 
-document.addEventListener('DOMContentLoaded',()=>{ 
-  document.querySelectorAll('input,textarea').forEach(fixIme); 
-  new MutationObserver(muts=>muts.forEach(m=>m.addedNodes.forEach(n=>{ 
-    if(n.nodeType===1){ 
-      if(n.matches&&(n.matches('input')||n.matches('textarea'))) fixIme(n); 
-      n.querySelectorAll&&n.querySelectorAll('input,textarea').forEach(fixIme); 
-    } 
-  }))).observe(document.body,{childList:true,subtree:true}); 
-});
-
+// 모바일 입력 버벅임 방지 - 단순화된 버전
 function fixIme(el){
     if(el._imeFixed) return;
     el._imeFixed=true;
-    el.addEventListener('compositionstart', () => { el._composing = true; }, true);
-    el.addEventListener('compositionend', () => { el._composing = false; }, true);
     el.addEventListener('keydown', e => {
-        if((e.isComposing || el._composing) && e.key === 'Enter') {
-            e.stopImmediatePropagation(); e.preventDefault();
-        }
+        if(e.isComposing && e.key === 'Enter') e.stopImmediatePropagation();
     }, true);
 }
 
 function safeFocus(id){
-    setTimeout(() => {
-        try {
-            const el = typeof id === 'string' ? document.getElementById(id) : id;
-            if(el){ el.blur(); el.focus(); }
-        } catch(e){}
-    }, 380);
+    if(window.innerWidth > 768) {
+        setTimeout(() => {
+            try {
+                const el = typeof id === 'string' ? document.getElementById(id) : id;
+                if(el) el.focus();
+            } catch(e){}
+        }, 100);
+    }
 }
 
 boot();
