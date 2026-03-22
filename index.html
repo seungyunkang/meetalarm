@@ -350,14 +350,17 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .cal-controls{font-size:14px;gap:6px;margin-bottom:10px}
   .cal-controls button{padding:4px 8px;font-size:13px}
   .cal-header-row{font-size:11px;padding:5px 0}
-  .cal-body{grid-auto-rows:minmax(70px,auto)}
-  .cal-cell{padding:4px 2px;gap:2px}
-  .cal-date{font-size:11px;margin-bottom:2px;padding-left:1px}
-  .cal-ev{font-size:10px;padding:2px 4px;border-radius:4px;white-space:normal !important;line-height:1.4;word-break:keep-all;display:flex;align-items:flex-start;gap:3px}
+  .cal-body{grid-auto-rows:minmax(60px,auto)}
+  .cal-cell{padding:2px;gap:1px}
+  .cal-date{font-size:11px;margin-bottom:1px;padding-left:2px}
+  .cal-ev, .sch-ev{
+    font-size:10px; padding:3px; border-radius:4px;
+    line-height:1.3; word-break:break-all;
+    display:flex; align-items:flex-start; gap:3px;
+  }
   .cal-ev .ev-time{display:none}
   .cal-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
-  .cal-ev-list{gap:3px;max-height:none}
-  .sch-ev{font-size:10px;padding:2px 4px;white-space:normal;line-height:1.4}
+  .cal-ev-list{gap:2px;max-height:none}
   .members-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
   .auth-box{width:92%;padding:24px 20px;margin:0 auto}
   .toasts{top:auto;bottom:80px;right:10px;left:10px}
@@ -1646,9 +1649,6 @@ function renderCard(m, now, cu) {
 function changeMonth(diff) { calDate.setMonth(calDate.getMonth() + diff); renderCalendar(); }
 
 function renderCalendar() {
-  // 모바일에서는 리스트 뷰로
-  if(window.innerWidth <= 768) { renderCalendarList(); return; }
-
   const y = calDate.getFullYear(); const m = calDate.getMonth(); document.getElementById('cal-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
   const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
   let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
@@ -1656,9 +1656,7 @@ function renderCalendar() {
   
   let virtualMeetings = [];
   if (S.recurringTemplates) {
-      S.recurringTemplates.forEach(t => {
-          virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10));
-      });
+      S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
   }
   const combinedMeetings = [...S.meetings, ...virtualMeetings];
 
@@ -1670,18 +1668,32 @@ function renderCalendar() {
       return isDateMatch && visible && notHidden && passTab; 
     });
     dayMeetings.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+    
     let eventsHtml = dayMeetings.map(meet => {
-      const isMine = isAttending(meet, S.currentUser); const dt = new Date(meet.datetime); const p = n => String(n).padStart(2,'0'); const timeStr = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
+      const isMine = isAttending(meet, S.currentUser); 
       const dotColor = isMine ? 'var(--brand)' : 'var(--border2)';
       const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; 
-      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="cal-ev-dot" style="background:${dotColor}"></span>${meet.title}</div>`;
+      
+      let avatar = '';
+      if (meet.organizer && meet.attendees && meet.attendees.length > 0) {
+        const initial = meet.organizer.charAt(0);
+        if (isMine) {
+          avatar = `<div style="min-width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,0.25);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px;flex-shrink:0;">${initial}</div>`;
+        } else {
+          const c = getDeptColor(getUserDept(meet.organizer)) || dotColor;
+          avatar = `<div style="min-width:15px;height:15px;border-radius:50%;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px;flex-shrink:0;">${initial}</div>`;
+        }
+      } else {
+        avatar = `<span class="cal-ev-dot" style="background:${isMine?'#fff':dotColor};margin-top:4px;"></span>`;
+      }
+
+      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')">${avatar}<div style="flex:1;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${meet.title}</div></div>`;
     }).join('');
     html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
   }
   const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } } html += '</div>';
   document.getElementById('cal-grid').innerHTML = html;
 }
-
 // 모바일 전용 미팅 리스트 뷰
 function renderCalendarList() {
   const y = calDate.getFullYear(); const m = calDate.getMonth();
@@ -1831,6 +1843,8 @@ async function deleteMinute(minId) {
     m.minutes_list = m.minutes_list.filter(h => String(h.id) !== String(minId));
 
     if(mId.startsWith('rec_')) {
+        // 정기미팅 삭제 API 호출
+        try { await api('DELETE', `/recurring/minutes/${minId}`); } catch(e) { console.error(e); }
         let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
         localMin[mId] = { minutes_list: m.minutes_list }; 
         localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
@@ -1840,10 +1854,11 @@ async function deleteMinute(minId) {
             localMin[mId] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
         }
     }
-    openMinutesModal(mId); 
+    await openMinutesModal(mId); 
     toast('삭제되었습니다', 'info');
+    // 삭제 시에도 메인 버튼 색상 원복을 위해 호출
+    if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
-
 function closeMinutesModal() { document.getElementById('minutes-modal-overlay').classList.remove('show'); }
 
 async function saveMinutes() {
@@ -1862,6 +1877,8 @@ async function saveMinutes() {
       document.getElementById('minutes-content').value = '';
       await openMinutesModal(id);
       toast('저장되었습니다', 'success');
+      // UI 즉시 업데이트 (버튼 색상 변경용)
+      if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
     } catch(e) { toast('저장 실패', 'error'); }
     return;
   }
@@ -1887,6 +1904,7 @@ async function saveMinutes() {
   document.getElementById('minutes-content').value = '';
   await openMinutesModal(id); 
   toast('저장되었습니다', 'success'); 
+  // UI 즉시 업데이트
   if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
 
@@ -2224,9 +2242,6 @@ function setSchFilter(filter) {
 }
 function changeSchMonth(diff) { schCalDate.setMonth(schCalDate.getMonth() + diff); renderSchCalendar(); }
 function renderSchCalendar() {
-    // 모바일에서는 리스트 뷰로 표시
-    if(window.innerWidth <= 768) { renderSchList(); return; }
-    
     const y = schCalDate.getFullYear(); const m = schCalDate.getMonth(); document.getElementById('sch-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
     const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
     let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
@@ -2240,18 +2255,22 @@ function renderSchCalendar() {
             if (S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
             if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
         });
+        
         let eventsHtml = daySchedules.map(sch => {
             const visClass = sch.visibility; 
             const dotColor = visClass==='private'?'var(--teal)':visClass==='team'?'var(--brand)':'var(--amber)';
-            let authorText = sch.visibility !== 'private' ? `<span style="font-weight:700">${sch.author.charAt(0)}</span> ` : '';
-            return `<div class="sch-ev ${visClass}"><span class="cal-ev-dot" style="background:${dotColor}"></span>${sch.content}</div>`;
+            
+            const initial = sch.author ? sch.author.charAt(0) : '';
+            const c = getDeptColor(getUserDept(sch.author)) || dotColor;
+            const avatar = visClass !== 'private' ? `<div style="min-width:15px;height:15px;border-radius:50%;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px;flex-shrink:0;">${initial}</div>` : `<span class="cal-ev-dot" style="background:${dotColor};margin-top:4px;"></span>`;
+
+            return `<div class="sch-ev ${visClass}">${avatar}<div class="sch-text-wrap" style="-webkit-line-clamp:2;flex:1;">${sch.content}</div></div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
     }
     const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } }
     html += '</div>'; document.getElementById('sch-cal-grid').innerHTML = html;
 }
-
 // 모바일 전용 리스트 뷰
 function renderSchList() {
     const y = schCalDate.getFullYear(); const m = schCalDate.getMonth();
