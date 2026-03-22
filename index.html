@@ -1078,14 +1078,16 @@ function checkAdmin(userName) {
   return false;
 }
 
+// 올바르게 수정된 코드
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
-  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  companyId: localStorage.getItem('ma_company_id') || '', 
+  // ★ 추가: 회사 ID  
+  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
   recurringTemplates: [],
   recurringOverrides: {},
   recurringCompleted: []
 };
-
 let selectedRecAttendees = []; // 정기 미팅용 분리
 
 function saveHiddenIds() { try { localStorage.setItem('ma_hidden_ids', JSON.stringify([...S.hiddenIds])); } catch(e) {} }
