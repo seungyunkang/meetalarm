@@ -168,8 +168,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .form-row{margin-bottom:13px}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
 .form-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
-.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;transition:all var(--tr);font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02)}
-.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;transition:all var(--tr);font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-user-select:text; user-select:text; transform:translateZ(0);}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-user-select:text; user-select:text;}
 .form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
 .form-input::placeholder{color:var(--border3)}
 textarea.form-input{resize:vertical;min-height:76px}
@@ -219,9 +218,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .member-card:hover .member-card-actions{display:flex}
 
 /* ── AUTH SCREEN ────────────── */
-#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
-#server-setup{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:center;justify-content:center}
-.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:34px 38px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding-top:10vh;}
+#server-setup{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding-top:10vh;}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:34px 38px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-bottom:10vh;}
 .auth-logo{text-align:center;margin-bottom:26px}
 .auth-logo .lm{width:50px;height:50px;background:linear-gradient(135deg,var(--brand),var(--teal));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;margin:0 auto 10px;box-shadow:0 4px 10px var(--brand-glow)}
 .auth-logo h1{font-size:20px;font-weight:700;color:var(--text)}
@@ -235,15 +234,11 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .auth-ok.show{display:block}
 
 /* ── OVERLAY / MODAL ─────────── */
-.overlay{position:fixed;inset:0;background:rgba(17,24,39,.6);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px)}
-[data-theme="dark"] .overlay { background:rgba(0,0,0,.85); }
 .overlay{position:fixed;inset:0;background:rgba(17,24,39,.75);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;transition:opacity .2s}
 [data-theme="dark"] .overlay { background:rgba(0,0,0,.9); }
 .overlay.show{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.12);transform:scale(.92);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
 .modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);transform:scale(.95) translateZ(0);transition:transform .2s ease-out; -webkit-transform:translateZ(0); will-change:transform, opacity}
 .modal.minutes-lg { max-width: 750px; width: 95%; } 
-.overlay.show .modal{transform:none; transition:none;}
 .overlay.show .modal{transform:translateZ(0); transition:none;}
 .modal.mod-first{border-top:6px solid var(--brand)}
 .modal.mod-five{border-top:6px solid var(--amber)}
@@ -387,7 +382,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <!-- 서버 설정 화면 제거됨 (URL 고정) -->
 
 <!-- ★ 추가: 회사 설정 화면 (초대 코드 단계) -->
-<div id="company-setup" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9998; align-items:center; justify-content:center;">
+<div id="company-setup" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9998; align-items:flex-start; justify-content:center; overflow-y:auto; padding-top:10vh;">
   <div class="auth-box">
     <div class="auth-logo">
       <div class="lm">🏢</div>
@@ -835,7 +830,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       </div>
       <div><label class="form-label" data-i18n="c_time">기본 시간 *</label><input class="form-input" type="time" id="rf-time" /></div>
     </div>
-
+    
     <div id="ui-weekly" class="form-row">
       <label class="form-label" data-i18n="rec_day_sel">요일 선택</label>
       <div class="day-selector" id="rf-days">
@@ -856,7 +851,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     </div>
 
     <div class="form-row"><label class="form-label" data-i18n="c_loc">기본 장소 *</label><input class="form-input" id="rf-loc" /></div>
-
+    
     <div class="form-row" style="margin-top:15px; border-top:1px dashed var(--border); padding-top:15px;">
       <label class="form-label" data-i18n="c_att">참석자 지정</label>
       <div class="picker-tabs">
@@ -885,7 +880,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   <div class="modal" style="max-width:450px; text-align:left;">
     <div style="font-size:17px;font-weight:700;margin-bottom:5px;" data-i18n="rec_override_title">✏️ 이번 회차만 수정</div>
     <div id="override-date-info" style="font-size:13px; color:var(--brand); margin-bottom:15px; font-weight:600;"></div>
-
+    
     <div class="form-row-2">
       <div><label class="form-label" data-i18n="c_date">이번 회차 날짜</label><input class="form-input" type="date" id="of-date" /></div>
       <div><label class="form-label" data-i18n="c_time">이번 회차 시간</label><input class="form-input" type="time" id="of-time" /></div>
@@ -938,13 +933,13 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <!-- 모바일 더보기 메뉴 -->
 <div id="mobile-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:7999;padding:12px">
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('members');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('members')">
       <span class="mobile-tab-icon">👥</span><span>구성원</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring')">
       <span class="mobile-tab-icon">🔁</span><span>정기미팅</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleLang();toggleMobileMore()">
@@ -1075,10 +1070,17 @@ function openExternalLink(url) { if(!url) return; const full = url.startsWith('h
 // ═══════════════════════════════════════════════
 // GLOBAL STATE
 // ═══════════════════════════════════════════════
+// 👑 관리자 확인 함수 (가장 먼저 가입한 유저 확인)
+function checkAdmin(userName) {
+  if (!userName) return false;
+  if (userName === '강승윤') return true; // 기존 마스터 계정은 호환성을 위해 유지
+  if (S.users && S.users.length > 0 && S.users[0].name === userName) return true;
+  return false;
+}
+
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
-  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID
-  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
   recurringTemplates: [],
   recurringOverrides: {},
   recurringCompleted: []
@@ -1254,13 +1256,13 @@ async function enterApp(userName) {
   S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
   const now = new Date(); const days=['일','월','화','수','목','금','토'];
   document.getElementById('dash-greeting').textContent=`안녕하세요, ${userName}님 👋`; document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
-
+  
   await loadMeetings(); 
   await loadSchedules();
   await loadRecurring();
-
-  buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
-  if (S.currentUser === '강승윤') { 
+  
+buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
+  if (checkAdmin(S.currentUser)) { 
     document.getElementById('btn-add-dept').style.display = 'inline-block';
     document.getElementById('nav-settings').style.display = 'flex';
   }
@@ -1313,7 +1315,7 @@ async function loadUsers()    { S.users    = await api('GET','/users'); }
 async function loadMeetings() { 
   S.meetings = await api('GET','/meetings'); 
   const localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
-
+  
   S.meetings.forEach(m => { 
     if(localMin[m.id] && localMin[m.id].minutes_list) { 
       m.minutes_list = localMin[m.id].minutes_list.map(h => ({...h, id: h.id || 'min_'+Math.random().toString(36).substr(2,9)})); 
@@ -1329,19 +1331,19 @@ function goto(id) {
   document.getElementById('page-'+id).classList.add('active'); 
   const navBtn = document.getElementById('nav-'+id);
   if(navBtn) navBtn.classList.add('active');
-
+  
   // 모바일 탭바 동기화
   document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
   const mtab = document.getElementById('mtab-'+id);
   if(mtab) mtab.classList.add('active');
-
+  
   // 더보기 메뉴 닫기
   document.getElementById('mobile-more-menu').style.display = 'none';
 
   if(id==='dashboard') renderDashboard(); 
   if(id==='schedules') renderSchCalendar(); 
   if(id==='members') renderMembers(); 
-  if(id==='settings') { if(S.currentUser !== '강승윤') { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
+  if(id==='settings') { if(!checkAdmin(S.currentUser)) { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
 }
@@ -1397,9 +1399,9 @@ async function saveRecurringTemplate() {
   const time = document.getElementById('rf-time').value;
   const loc = document.getElementById('rf-loc').value.trim();
   const days = Array.from(document.querySelectorAll('.day-dot.active')).map(d=>parseInt(d.dataset.day));
-
+  
   if(!title || !time || !loc) { toast(g_lang==='ko'?"필수 항목을 입력하세요":"Fill required fields", "error"); return; }
-
+  
   const newTmpl = {
     id: 'tmpl_' + Date.now(),
     title, freq, time, location: loc, days,
@@ -1409,7 +1411,7 @@ async function saveRecurringTemplate() {
     alarm1: alarm1Min,
     createdAt: new Date().toISOString()
   };
-
+  
   try {
     await api('POST', '/recurring/templates', newTmpl);
     if (!S.recurringTemplates) S.recurringTemplates = [];
@@ -1440,12 +1442,12 @@ function generateRecurringInstances(template, count = 6) {
   let found = 0;
   let safeLoop = 0;
   const localMin = getCachedLocalMin();
-
+  
   while(found < count && safeLoop < 365) {
     safeLoop++;
     const day = current.getDay();
     let match = false;
-
+    
     if(template.freq === 'weekly' || template.freq === 'biweekly') {
       if(template.days.includes(day)) {
         if(template.freq === 'biweekly') {
@@ -1472,20 +1474,20 @@ function generateRecurringInstances(template, count = 6) {
     if(match) {
       const pad = n => String(n).padStart(2,'0');
       const dateStr = `${current.getFullYear()}-${pad(current.getMonth()+1)}-${pad(current.getDate())}`;
-
+      
       const key = `${template.id}_${dateStr}`;
       const override = S.recurringOverrides[key];
-
+      
       if(!override || !override.isCancelled) {
         const mTime = override?.time || template.time; 
         const mDate = override?.date || dateStr; 
         const mId = `rec_${key}`;
-
+        
         const isEnded = S.recurringCompleted.includes(mId) || new Date(`${mDate}T${mTime}:00`).getTime() < Date.now() - 60*60000;
-
+        
         const hasServerMinutes = S.recurringWithMinutes && S.recurringWithMinutes.has(mId);
         const hasLocalMinutes = localMin[mId] && localMin[mId].minutes_list && localMin[mId].minutes_list.length > 0;
-
+        
         instances.push({
           id: mId,
           recId: template.id,
@@ -1544,14 +1546,14 @@ function openOverrideModal(tmplId, dateStr) {
   if(!tmpl) return;
   const key = `${tmplId}_${dateStr}`;
   const ov = S.recurringOverrides[key] || {};
-
+  
   document.getElementById('override-date-info').textContent = `${dateStr} 회차 개별 설정`;
   document.getElementById('of-date').value = ov.date || dateStr; 
   document.getElementById('of-time').value = ov.time || tmpl.time; 
   document.getElementById('of-loc').value = ov.location || tmpl.location;
   document.getElementById('of-agenda').value = ov.agenda || '';
   document.getElementById('of-cancel').checked = !!ov.isCancelled;
-
+  
   document.getElementById('override-modal-overlay').dataset.key = key;
   document.getElementById('override-modal-overlay').classList.add('show');
 }
@@ -1595,9 +1597,9 @@ function renderDashboard() {
   const visibleMeetings = combinedMeetings.filter(m => isVisible(m, cu)); 
   const activeMeetings = showHidden ? visibleMeetings : visibleMeetings.filter(m => !S.hiddenIds.has(String(m.id)));
   let list = [...activeMeetings].sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
-
+  
   if(S.viewFilter === 'mine') list = list.filter(m => isAttending(m, cu));
-
+  
   const displayedActive = list.filter(m => !m.completed);
   let totalCnt = 0, upcomingCnt = 0, liveCnt = 0, todayCnt = 0, pendingCnt = 0;
   displayedActive.forEach(m => {
@@ -1607,7 +1609,7 @@ function renderDashboard() {
   });
   document.getElementById('s-total').textContent = totalCnt; document.getElementById('s-upcoming').textContent = upcomingCnt; document.getElementById('s-live').textContent = liveCnt; document.getElementById('s-today').textContent = todayCnt; document.getElementById('s-pending').textContent = pendingCnt;
   document.getElementById('btn-show-hidden').style.display = S.hiddenIds.size > 0 ? '' : 'none';
-
+  
   const el = document.getElementById('meeting-list');
   if(!list.length){ el.innerHTML = emptyState('📅', g_lang==='ko'?'미팅이 없습니다':'No meetings', ''); } else {
     const active = list.filter(m => !m.completed); const done = list.filter(m => m.completed && !m.isRecurring);
@@ -1622,32 +1624,32 @@ function renderCard(m, now, cu) {
   const dt=new Date(m.datetime), diff=dt-now; const isLive=!m.completed&&diff>-30*60000&&diff<=0; const isSoon=!m.completed&&diff>0&&diff<=15*60000; const isPast=!m.completed&&diff<-30*60000; const isComp=!!m.completed; const isMine=isAttending(m,cu); const isOrg=m.organizer===cu; const isHidden=S.hiddenIds.has(String(m.id));
   const attendees = m.attendees||[]; const isPersonal = attendees.length === 0;
   const isRec = m.isRecurring;
-
+  
   let sc = isComp?'status-done':isLive?'status-live':isSoon?'status-soon':isPast?'status-done':(isRec?'status-recurring':'status-upcoming'); 
   let sb;
   if(isComp) sb=badge('green', g_lang==='ko'?'✅ 완료':'✅ Done'); else if(isLive) sb=badge('green', g_lang==='ko'?'🔴 진행 중':'🔴 Live'); else if(isSoon) sb=badge('amber', g_lang==='ko'?'⚡ 곧 시작':'⚡ Soon'); else if(isPast) sb=badge('gray', g_lang==='ko'?'종료':'Past'); else sb=badge('brand', g_lang==='ko'?'예정':'Upcoming');
-
+  
   const personalB = isPersonal ? badge('teal', g_lang==='ko'?'개인 일정':'Personal') : ''; const myB = isMine && !isPersonal ? badge('purple', g_lang==='ko'?'내 미팅':'Mine') : ''; const orgB = isOrg && !isPersonal ? badge('brand', g_lang==='ko'?'주최자':'Organizer') : ''; const hidB = isHidden ? `<span class="badge badge-gray">Hidden</span>` : '';
   const recB = isRec ? `<span class="badge badge-purple-rec">🔁 ${g_lang==='ko'?'정기':'Recurring'}</span>` : '';
   const modB = m.isModified ? `<span class="badge badge-amber" style="font-size:10px">✏️ ${g_lang==='ko'?'수정됨':'Modified'}</span>` : '';
-
+  
   const avatars = isPersonal ? `<div class="badge badge-gray" style="font-size:12px;padding:4px 10px;color:var(--text2)">👤 ${g_lang==='ko'?'나만의 일정':'Me Only'}</div>` : attendees.map(a=>{ const n=a.user_name||a; const c=getDeptColor(getUserDept(n)); return `<div class="avatar" style="background:${c}22;color:${c}">${n}</div>`; }).join('');
   const attCountHtml = isPersonal ? '' : `<span style="font-size:14px;color:var(--text3);font-weight:600">${attendees.length}${g_lang==='ko'?'명':''}</span>`;
-
+  
   const agenda = m.agenda ? `<div class="m-agenda">${m.agenda.split('\n').map(l=>`• ${l}`).join('<br>')}</div>` : ''; const countdown = (!isComp&&diff>0) ? `<span style="color:var(--amber);font-weight:700">⏱ ${getCountdown(diff)}</span>` : ''; const zoomBtn = m.zoom_link ? `<span onclick="event.stopPropagation();openExternalLink('${m.zoom_link}')" style="color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;display:inline-block;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;" title="${m.zoom_link}">🔗 ${m.zoom_link}</span>` : '';
   let alarmBar='';
   if(isMine&&!isPast&&!isComp) {
     let myAlarm = attendees.find(a=>(a.user_name||a)===cu); if(!myAlarm && isOrg) myAlarm = m.org_alarm || { alarm_first:0, alarm_five:0, alarm_start:0 }; const af=myAlarm?.alarm_first||0, av=myAlarm?.alarm_five||0, as=myAlarm?.alarm_start||0;
     alarmBar=`<div class="m-alarm-bar"><div class="alarm-step"><div class="alarm-dot ${af?'done':''}">${af?'✓':''}</div><div class="alarm-step-label">${m.alarm1||60}${g_lang==='ko'?'분 전':'m'}</div></div><div class="alarm-step"><div class="alarm-dot ${av?'done':af?'active':''}">${av?'✓':''}</div><div class="alarm-step-label">5${g_lang==='ko'?'분 전':'m'}</div></div><div class="alarm-step"><div class="alarm-dot ${as?'done':''}">${as?'✓':''}</div><div class="alarm-step-label">${g_lang==='ko'?'시작':'Start'}</div></div></div>`;
   }
-
+  
   const hasMinutes = m.minutes_list && m.minutes_list.length > 0;
   const minutesBtn = hasMinutes 
       ? `<button class="btn btn-primary btn-sm" style="font-size:13px" onclick="event.stopPropagation();openMinutesModal('${m.id}')">${I18N[g_lang].btn_min_view}</button>` 
       : `<button class="btn btn-ghost btn-sm" style="font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();openMinutesModal('${m.id}')">${I18N[g_lang].btn_min_write}</button>`;
 
   let actions = minutesBtn;
-
+  
   if(isRec && !isComp && isMine) {
       actions = `<button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();openOverrideModal('${m.recId}', '${m.dateStr}')">✏️ ${g_lang==='ko'?'이번회차 수정':'Modify This'}</button>` + actions;
   }
@@ -1656,14 +1658,14 @@ function renderCard(m, now, cu) {
   if((isLive || isPast) && isOrg && !isComp) {
     actions += `<button class="btn btn-primary btn-sm" style="background:var(--green);font-size:13px" onclick="event.stopPropagation();endMeeting('${m.id}')">🏁 ${g_lang==='ko'?'일정 종료':'End'}</button>`;
   }
-
+  
   if(isHidden) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--brand);font-size:13px;border-color:var(--border2)" onclick="event.stopPropagation();unhideMeeting('${m.id}')">👁 ${g_lang==='ko'?'숨기기 취소':'Unhide'}</button>`;
   else actions += `<button class="btn btn-ghost btn-sm" style="font-size:13px" onclick="event.stopPropagation();hideMeeting('${m.id}')">🙈 ${g_lang==='ko'?'숨기기':'Hide'}</button>`;
-
+  
   if (isOrg && !isRec) {
       actions += `<button class="btn btn-danger btn-sm" style="font-size:13px" onclick="event.stopPropagation();deleteMeeting('${m.id}')">🗑 ${g_lang==='ko'?'삭제':'Delete'}</button>`;
   }
-
+  
   if(!isComp&&!isPast&&isMine&&!isOrg && !isRec) actions += `<button class="btn btn-ghost btn-sm" style="color:var(--amber);border-color:var(--border2);font-size:13px" onclick="event.stopPropagation();leaveMeeting('${m.id}')">🚪 ${g_lang==='ko'?'참석 취소':'Leave'}</button>`;
 
   return `<div class="meeting-card ${sc}" style="${isComp?'opacity:.7':''}${isHidden?';border-style:dashed':''}"><div class="m-top"><div class="m-title">${m.title}</div><div class="m-badges">${hidB}${personalB}${myB}${orgB}${recB}${modB}${sb}</div></div><div class="m-meta"><span>🕐 ${fmtDt(m.datetime)}</span><span>📍 ${m.location}</span>${isPersonal?'':`<span>👤 ${m.organizer}</span>`}${countdown?`<span>${countdown}</span>`:''}${zoomBtn?`<span>${zoomBtn}</span>`:''}</div>${agenda}<div class="m-footer"><div class="avatar-stack">${avatars}</div>${attCountHtml}</div>${alarmBar}<div class="m-actions" style="margin-top:12px;border-top:1px dashed var(--border);padding-top:12px">${actions}</div></div>`;
@@ -1679,7 +1681,7 @@ function renderCalendar() {
   const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
   let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
   for(let i=0; i<firstDay; i++) { html += `<div class="cal-cell empty"></div>`; }
-
+  
   let virtualMeetings = [];
   if (S.recurringTemplates) {
       S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
@@ -1694,12 +1696,12 @@ function renderCalendar() {
       return isDateMatch && visible && notHidden && passTab; 
     });
     dayMeetings.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
-
+    
     let eventsHtml = dayMeetings.map(meet => {
       const isMine = isAttending(meet, S.currentUser); 
       const dotColor = isMine ? 'var(--brand)' : 'var(--border2)';
       const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; 
-
+      
       let avatar = '';
       if (meet.organizer && meet.attendees && meet.attendees.length > 0) {
         const initial = meet.organizer.charAt(0);
@@ -1800,7 +1802,7 @@ async function openMinutesModal(id) {
   document.getElementById('minutes-edit-id').value = '';
   document.getElementById('minutes-content').value = '';
   document.getElementById('minutes-modal-subtitle').innerHTML = `<b>${g_lang==='ko'?'회의':'Meeting'}:</b> ${m.title} <span style="margin-left:12px"><b>${g_lang==='ko'?'일시':'Time'}:</b> ${fmtDt(m.datetime)}</span>`; 
-
+  
   let history = [];
   if(id.startsWith('rec_')) {
     try {
@@ -1811,7 +1813,7 @@ async function openMinutesModal(id) {
   } else {
     history = m.minutes_list || [];
   }
-
+  
   _currentMinutesList = history;
 
   const listEl = document.getElementById('minutes-history-list');
@@ -1819,7 +1821,7 @@ async function openMinutesModal(id) {
       listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:20px;">${g_lang==='ko'?'아직 작성된 회의록이 없습니다.':'No minutes recorded yet.'}</div>`;
   } else {
       listEl.innerHTML = history.map(h => {
-          const isMine = h.author === S.currentUser || S.currentUser === '강승윤';
+          const isMine = h.author === S.currentUser || checkAdmin(S.currentUser);
           return `
           <div class="min-history-item" style="${h.author === S.currentUser ? 'border-color:var(--purple); background:var(--purple-bg);' : ''}">
               <div class="min-history-header">
@@ -1850,7 +1852,7 @@ function editMinute(minId) {
 
 async function deleteMinute(minId) {
     if(!confirm('이 회의록 기록을 삭제하시겠습니까?')) return;
-
+    
     const mId = document.getElementById('minutes-meeting-id').value;
     _currentMinutesList = _currentMinutesList.filter(h => String(h.id) !== String(minId));
 
@@ -1859,7 +1861,7 @@ async function deleteMinute(minId) {
         let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
         localMin[mId] = { minutes_list: _currentMinutesList }; 
         localStorage.setItem('ma_local_minutes', JSON.stringify(localMin));
-
+        
         if (_currentMinutesList.length === 0 && S.recurringWithMinutes) {
             S.recurringWithMinutes.delete(mId);
         }
@@ -1883,7 +1885,7 @@ async function saveMinutes() {
   const editId = document.getElementById('minutes-edit-id').value; 
   const content = document.getElementById('minutes-content').value.trim(); 
   const cu = S.currentUser;
-
+  
   if(!content) return toast('내용을 입력하세요','error');
 
   if(id.startsWith('rec_')) {
@@ -1891,7 +1893,7 @@ async function saveMinutes() {
       await api('POST', `/recurring/minutes/${encodeURIComponent(id)}`, { author: cu, content, editId: editId || null });
       document.getElementById('minutes-edit-id').value = '';
       document.getElementById('minutes-content').value = '';
-
+      
       // UI 즉시 업데이트를 위해 로컬 캐시에 더미 데이터 삽입
       let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}');
       if(!localMin[id]) localMin[id] = { minutes_list: [] };
@@ -1920,7 +1922,7 @@ async function saveMinutes() {
       let localMin = JSON.parse(localStorage.getItem('ma_local_minutes') || '{}'); 
       localMin[id] = { minutes_list: m.minutes_list }; localStorage.setItem('ma_local_minutes', JSON.stringify(localMin)); 
   }
-
+  
   document.getElementById('minutes-edit-id').value = ''; 
   document.getElementById('minutes-content').value = '';
   await openMinutesModal(id); 
@@ -1929,7 +1931,7 @@ async function saveMinutes() {
 }
 async function endMeeting(id) { 
     if(!confirm(g_lang==='ko'?'일정을 종료할까요?':'End meeting?')) return; 
-
+    
     if(id.startsWith('rec_')) {
         const m2 = (() => {
             let vm = [];
@@ -1971,7 +1973,7 @@ async function endMeeting(id) {
         }
         return;
     }
-
+    
     const m = S.meetings.find(x => String(x.id) === String(id));
     const hasMinutes = m && m.minutes_list && m.minutes_list.length > 0;
 
@@ -1997,7 +1999,7 @@ const _firedAlarms = new Set();
 
 async function checkAlarms() {
   const now = new Date(), cu = S.currentUser;
-
+  
   let virtualMeetings = [];
   if (S.recurringTemplates) {
       S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 6)); });
@@ -2009,7 +2011,7 @@ async function checkAlarms() {
     const dt = new Date(m.datetime); if(isNaN(dt.getTime())) continue; const diff = Math.floor((dt - now) / 60000); if(diff <= -60) continue;
     let att = m.attendees?.find(a=>(a.user_name||a)===cu); if(!att && m.organizer === cu) { if(!m.org_alarm) m.org_alarm = { alarm_first:0, alarm_five:0, alarm_start:0 }; att = m.org_alarm; } if(!att) continue;
     const a1 = Number(m.alarm1) || 60; if(diff > a1 + 2) continue; 
-
+    
     const fireAPI = (type) => {
         if(m.isRecurring) { /* Store recurring alarm status locally */ }
         else { api('PUT',`/meetings/${m.id}/alarm`,{userName:cu,type}).catch(e=>{}); }
@@ -2076,11 +2078,11 @@ async function renderArchive() {
   el.innerHTML = '<div style="color:var(--text3);padding:20px">불러오는 중...</div>';
   try {
     const list = await api('GET', '/meetings/archived');
-    if(!list || list.length === 0) {
+   if(!list || list.length === 0) {
       el.innerHTML = '<div class="empty"><div class="empty-icon">🗄️</div><div class="empty-text">보관된 미팅이 없습니다</div></div>';
       return;
     }
-    const isAdmin = S.currentUser === '강승윤';
+    const isAdmin = checkAdmin(S.currentUser);
     el.innerHTML = list.map(m => {
       const attendees = m.attendees || [];
       const avatars = attendees.map(a => {
@@ -2205,7 +2207,7 @@ async function submitMeeting() {
 function setDefaultFormDate() { const now=new Date(), p=n=>String(n).padStart(2,'0'); document.getElementById('f-date').value=`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`; const ft=new Date(now.getTime()+60*60000); document.getElementById('f-time').value=`${p(ft.getHours())}:${p(ft.getMinutes())}`; }
 
 function renderMembers() {
-  const cu = S.currentUser; const el = document.getElementById('members-content'); const isAdmin = cu === '강승윤'; 
+  const cu = S.currentUser; const el = document.getElementById('members-content'); const isAdmin = checkAdmin(cu); 
   if(!S.depts.length){ el.innerHTML=emptyState('👥', g_lang==='ko'?'부서가 없습니다':'No Depts', ''); return; }
   el.innerHTML=S.depts.map(d=>{
     const deptUsers=S.users.filter(u=>u.dept_id===d.id);
@@ -2274,13 +2276,13 @@ function renderSchCalendar() {
             if (S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
             if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
         });
-
+        
         let eventsHtml = daySchedules.map(sch => {
             const isMine = sch.author === S.currentUser;
             const bgClass = isMine ? 'rgba(27,181,184,0.15)' : 'var(--bg3)';
             const borderCol = isMine ? 'var(--brand)' : 'var(--border3)';
             const txtCol = isMine ? 'var(--text)' : 'var(--text2)';
-
+            
             return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; white-space:normal; word-break:break-all; overflow:hidden; text-overflow:ellipsis; padding:4px 6px; font-weight:${isMine?'700':'500'}; line-height:1.3;" title="${sch.content}">${sch.content}</div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
@@ -2351,9 +2353,9 @@ function renderDailyViewList(dateStr) {
         if (S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
         if (S.schFilter === 'all') return sch.visibility === 'public'; return false;
     });
-    if (daySchedules.length === 0) { listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:30px;">${g_lang==='ko'?'등록된 일정이 없습니다.':'No schedules for this day.'}</div>`; return; }
+   if (daySchedules.length === 0) { listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:30px;">${g_lang==='ko'?'등록된 일정이 없습니다.':'No schedules for this day.'}</div>`; return; }
     listEl.innerHTML = daySchedules.map(sch => {
-        const canDel = (sch.author === S.currentUser || S.currentUser === '강승윤'); const comments = sch.comments || [];
+        const canDel = (sch.author === S.currentUser || checkAdmin(S.currentUser)); const comments = sch.comments || [];
         let commentsHtml = comments.map(c => `<div class="dv-comment"><span class="dv-comment-author">${c.author}</span><span>${c.content}</span></div>`).join('');
         return `<div class="dv-item ${sch.visibility}"><div class="dv-header"><span style="font-weight:700;">${sch.visibility === 'private' ? (g_lang==='ko'?'나만보기':'Private') : '👤 ' + sch.author}</span>${canDel ? `<span class="sch-del" onclick="delSchedule('${sch.id}')">✕ ${g_lang==='ko'?'삭제':'Delete'}</span>` : ''}</div><div class="dv-content">${sch.content}</div><div class="dv-comments">${commentsHtml}<div class="dv-comment-input-wrap"><input type="text" class="dv-comment-input" id="cmt-input-${sch.id}" placeholder="${g_lang==='ko'?'댓글을 남겨보세요...':'Write a comment...'}" onkeydown="if(event.key==='Enter')addComment('${sch.id}')"><button class="btn btn-ghost btn-sm" onclick="addComment('${sch.id}')">등록</button></div></div></div>`;
     }).join('');
@@ -2414,7 +2416,7 @@ async function delSchedule(id) {
 function toggleTodayItem(id) {
     let doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
     const el = document.getElementById('today-item-' + id);
-
+    
     if (doneIds.includes(id)) {
         doneIds = doneIds.filter(x => x !== id);
         if (el) el.classList.remove('done-strike');
@@ -2422,7 +2424,7 @@ function toggleTodayItem(id) {
         doneIds.push(id);
         if (el) el.classList.add('done-strike');
     }
-
+    
     localStorage.setItem('ma_today_done', JSON.stringify(doneIds));
 }
 
@@ -2458,7 +2460,7 @@ function openTodayModal() {
             const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             const stat = m.completed ? '✅ ' : '⏰ ';
             const isDone = doneIds.includes(m.id) ? 'done-strike' : '';
-
+            
             return `<div class="today-item meet ${isDone}" id="today-item-${m.id}" onclick="toggleTodayItem('${m.id}')">
                 <div class="today-item-top"><span>${stat}${timeStr}</span><span>📍 ${m.location}</span></div>
                 <div class="today-item-title">${m.isRecurring ? '🔁 ' : ''}${m.title}</div>
@@ -2507,7 +2509,7 @@ function loadSettingsPage() {
   document.getElementById('slack-url').value=S.slackUrl; 
   document.getElementById('slack-channel').value=S.slackChannel; 
   document.getElementById('server-info-text').textContent=SERVER_URL;
-  const isAdmin = S.currentUser === '강승윤';
+  const isAdmin = checkAdmin(S.currentUser);
   const adminPanel = document.getElementById('admin-invite-panel');
   if(isAdmin) {
     adminPanel.style.display = 'block';
@@ -2577,3 +2579,4 @@ function safeFocus(id){
 boot();
 </script>
 </body>
+</html>

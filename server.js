@@ -105,6 +105,7 @@ async function initDB() {
   console.log('DB 초기화 완료');
       try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
       try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS minutes_list TEXT'); } catch(e) {}
+      try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()'); } catch(e) {}
     }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -177,7 +178,7 @@ const httpServer = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url === '/api/users') {
-      const { rows } = await pool.query('SELECT name,dept_id FROM users WHERE company_id=$1', [companyId]);
+      const { rows } = await pool.query('SELECT name,dept_id FROM users WHERE company_id=$1 ORDER BY created_at ASC', [companyId]);
       return send(rows);
     }
 
