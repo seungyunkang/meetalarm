@@ -218,9 +218,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .member-card:hover .member-card-actions{display:flex}
 
 /* ── AUTH SCREEN ────────────── */
-#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
-#server-setup{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:center;justify-content:center}
-.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:34px 38px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding-top:10vh;}
+#server-setup{position:fixed;inset:0;background:var(--bg);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding-top:10vh;}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:34px 38px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-bottom:10vh;}
 .auth-logo{text-align:center;margin-bottom:26px}
 .auth-logo .lm{width:50px;height:50px;background:linear-gradient(135deg,var(--brand),var(--teal));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;margin:0 auto 10px;box-shadow:0 4px 10px var(--brand-glow)}
 .auth-logo h1{font-size:20px;font-weight:700;color:var(--text)}
@@ -382,7 +382,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <!-- 서버 설정 화면 제거됨 (URL 고정) -->
 
 <!-- ★ 추가: 회사 설정 화면 (초대 코드 단계) -->
-<div id="company-setup" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9998; align-items:center; justify-content:center;">
+<div id="company-setup" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9998; align-items:flex-start; justify-content:center; overflow-y:auto; padding-top:10vh;">
   <div class="auth-box">
     <div class="auth-logo">
       <div class="lm">🏢</div>
@@ -933,13 +933,13 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <!-- 모바일 더보기 메뉴 -->
 <div id="mobile-more-menu" style="display:none;position:fixed;bottom:70px;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:7999;padding:12px">
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('members');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('members')">
       <span class="mobile-tab-icon">👥</span><span>구성원</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('recurring')">
       <span class="mobile-tab-icon">🔁</span><span>정기미팅</span>
     </button>
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive');toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleLang();toggleMobileMore()">
@@ -1070,10 +1070,17 @@ function openExternalLink(url) { if(!url) return; const full = url.startsWith('h
 // ═══════════════════════════════════════════════
 // GLOBAL STATE
 // ═══════════════════════════════════════════════
+// 👑 관리자 확인 함수 (가장 먼저 가입한 유저 확인)
+function checkAdmin(userName) {
+  if (!userName) return false;
+  if (userName === '강승윤') return true; // 기존 마스터 계정은 호환성을 위해 유지
+  if (S.users && S.users.length > 0 && S.users[0].name === userName) return true;
+  return false;
+}
+
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
-  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID
-  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  companyId: localStorage.getItem('ma_company_id') || '', // ★ 추가: 회사 ID  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
   recurringTemplates: [],
   recurringOverrides: {},
   recurringCompleted: []
@@ -1336,7 +1343,7 @@ function goto(id) {
   if(id==='dashboard') renderDashboard(); 
   if(id==='schedules') renderSchCalendar(); 
   if(id==='members') renderMembers(); 
-  if(id==='settings') { if(S.currentUser !== '강승윤') { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
+  if(id==='settings') { if(!checkAdmin(S.currentUser)) { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
 }
@@ -1814,7 +1821,7 @@ async function openMinutesModal(id) {
       listEl.innerHTML = `<div style="text-align:center; color:var(--text3); padding:20px;">${g_lang==='ko'?'아직 작성된 회의록이 없습니다.':'No minutes recorded yet.'}</div>`;
   } else {
       listEl.innerHTML = history.map(h => {
-          const isMine = h.author === S.currentUser || S.currentUser === '강승윤';
+          const isMine = h.author === S.currentUser || checkAdmin(S.currentUser);
           return `
           <div class="min-history-item" style="${h.author === S.currentUser ? 'border-color:var(--purple); background:var(--purple-bg);' : ''}">
               <div class="min-history-header">
@@ -2200,7 +2207,7 @@ async function submitMeeting() {
 function setDefaultFormDate() { const now=new Date(), p=n=>String(n).padStart(2,'0'); document.getElementById('f-date').value=`${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}`; const ft=new Date(now.getTime()+60*60000); document.getElementById('f-time').value=`${p(ft.getHours())}:${p(ft.getMinutes())}`; }
 
 function renderMembers() {
-  const cu = S.currentUser; const el = document.getElementById('members-content'); const isAdmin = cu === '강승윤'; 
+  const cu = S.currentUser; const el = document.getElementById('members-content'); const isAdmin = checkAdmin(cu); 
   if(!S.depts.length){ el.innerHTML=emptyState('👥', g_lang==='ko'?'부서가 없습니다':'No Depts', ''); return; }
   el.innerHTML=S.depts.map(d=>{
     const deptUsers=S.users.filter(u=>u.dept_id===d.id);
