@@ -347,17 +347,17 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .form-row-2{grid-template-columns:1fr}
   .form-input{font-size:16px;padding:10px 12px}
   .btn-full{padding:14px}
-  /* 달력 최적화 - 셀 작게, 텍스트 작게 */
+  /* 달력 최적화 - 제목 2줄, 셀 크기 적당히 */
   .cal-controls{font-size:14px;gap:6px;margin-bottom:10px}
   .cal-controls button{padding:4px 8px;font-size:13px}
   .cal-header-row{font-size:11px;padding:5px 0}
-  .cal-body{grid-auto-rows:minmax(48px,auto)}
-  .cal-cell{padding:3px 2px;gap:1px}
-  .cal-date{font-size:11px;margin-bottom:1px}
-  .cal-ev{font-size:9px;padding:1px 3px;border-radius:3px}
+  .cal-body{grid-auto-rows:minmax(60px,auto)}
+  .cal-cell{padding:4px 2px;gap:2px}
+  .cal-date{font-size:11px;margin-bottom:2px;padding-left:1px}
+  .cal-ev{font-size:9px;padding:2px 4px;border-radius:4px;white-space:normal !important;line-height:1.3;word-break:keep-all}
   .cal-ev .ev-time{display:none}
-  .cal-ev-list{gap:1px}
-  .sch-ev{font-size:9px;padding:2px 4px}
+  .cal-ev-list{gap:2px;max-height:none}
+  .sch-ev{font-size:9px;padding:2px 4px;white-space:normal;line-height:1.3}
   .members-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
   .auth-box{width:92%;padding:24px 20px;margin:0 auto}
   .toasts{top:auto;bottom:80px;right:10px;left:10px}
@@ -1238,12 +1238,20 @@ function connectWS() {
   ws.onopen = () => { ws.send(JSON.stringify({event:'auth', name:S.currentUser, companyId:S.companyId})); setConnStatus(true); };
   ws.onmessage = async (e) => {
     const msg = JSON.parse(e.data);
-    if(msg.event==='meeting_created'||msg.event==='meeting_updated') { await loadMeetings(); renderDashboard(); updateBadges(); }
-    if(msg.event==='meeting_deleted') { await loadMeetings(); renderDashboard(); updateBadges(); }
+    // 깜빡임 방지: 자신이 발생시킨 이벤트는 이미 로컬에 반영됨, 남이 발생시킨 것만 서버에서 갱신
+    if(msg.event==='meeting_created'||msg.event==='meeting_updated') { 
+      await loadMeetings(); renderDashboard(); updateBadges(); 
+    }
+    if(msg.event==='meeting_deleted') { 
+      if(msg.data?.id) S.meetings = S.meetings.filter(m=>String(m.id)!==String(msg.data.id));
+      else await loadMeetings();
+      renderDashboard(); updateBadges(); 
+    }
     if(msg.event==='meeting_ended') { 
-      await loadMeetings(); renderDashboard(); updateBadges();
+      if(msg.data?.id) S.meetings = S.meetings.filter(m=>String(m.id)!==String(msg.data.id));
+      else await loadMeetings();
+      renderDashboard(); updateBadges();
       const m = msg.data;
-      // 주최자 본인 제외 참석자들한테 알람
       if(m && m.organizer !== S.currentUser && isAttending(m, S.currentUser)) {
         fireEndedNotif(m);
       }
@@ -1635,7 +1643,8 @@ function renderCalendar() {
     dayMeetings.sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
     let eventsHtml = dayMeetings.map(meet => {
       const isMine = isAttending(meet, S.currentUser); const dt = new Date(meet.datetime); const p = n => String(n).padStart(2,'0'); const timeStr = `${p(dt.getHours())}:${p(dt.getMinutes())}`;
-      const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="ev-time">${timeStr}</span> ${meet.title}</div>`;
+      const evClass = isMine ? 'cal-ev mine' : 'cal-ev other'; 
+      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')"><span class="ev-time">${timeStr}</span> ${meet.title}</div>`;
     }).join('');
     html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
   }
