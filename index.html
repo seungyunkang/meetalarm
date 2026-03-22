@@ -2110,17 +2110,17 @@ function openEditMemberModal(name, deptId) { document.getElementById('member-mod
 function closeMemberModal() { document.getElementById('member-modal').classList.remove('show'); }
 async function saveMember() {
   const name=document.getElementById('member-name-input').value.trim(); const deptId=document.getElementById('member-dept-sel').value; const pw=document.getElementById('member-pw-input').value; const editName=document.getElementById('member-edit-name').value;
-if(!name||(!editName && pw.length<4)){ toast('Error','error'); return; }
-let r;
-if(editName) {
-  const body = {name, deptId};
-  if(pw) body.password = pw;
-  r = await api('PUT', `/users/${encodeURIComponent(editName)}`, body);
-} else {
-  r = await api('POST', '/register', {name, deptId, password:pw||'temp1234'});
-}
-if(r.error && !editName){ toast(r.error,'error'); return; }
-await loadUsers(); buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); closeMemberModal(); toast(g_lang==='ko'?'저장되었습니다':'Saved','success');
+  if(!name||(!editName && pw.length<4)){ toast('Error','error'); return; }
+  let r;
+  if(editName) {
+    const body = {name, deptId};
+    if(pw) { if(pw.length<4){ toast(g_lang==='ko'?'비밀번호는 4자 이상':'Password min 4','error'); return; } body.pw = pw; }
+    r = await api('PUT', `/users/${encodeURIComponent(editName)}`, body);
+  } else {
+    r = await api('POST', '/register', {name, deptId, pw: pw||'temp1234', companyId: S.companyId});
+  }
+  if(r && r.error){ toast(r.error,'error'); return; }
+  await loadUsers(); buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); closeMemberModal(); toast(g_lang==='ko'?'저장되었습니다':'Saved','success');
 }
 async function delMember(name) {
   if (name === S.currentUser) { toast(g_lang==='ko'?'본인 계정은 삭제 불가':'Cannot delete yourself', 'error'); return; }
