@@ -1258,7 +1258,10 @@ async function enterApp(userName) {
   document.getElementById('sidebar-name').textContent = userName; document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
   S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
   const now = new Date(); const days=['일','월','화','수','목','금','토'];
-  document.getElementById('dash-greeting').textContent=`안녕하세요, ${userName}님 👋`; document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+  // 수정된 코드: [회사명] [이름]님 형태로 변경
+const companyName = localStorage.getItem('ma_company_name') || 'Enterprise';
+document.getElementById('dash-greeting').innerHTML = 
+  `<span style="color:var(--brand); font-weight:700;">${companyName}</span> ${userName}님`;document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
   
   await loadMeetings(); 
   await loadSchedules();
