@@ -1620,6 +1620,9 @@ function renderCard(m, now, cu) {
 function changeMonth(diff) { calDate.setMonth(calDate.getMonth() + diff); renderCalendar(); }
 
 function renderCalendar() {
+  // 모바일에서는 리스트 뷰로
+  if(window.innerWidth <= 768) { renderCalendarList(); return; }
+
   const y = calDate.getFullYear(); const m = calDate.getMonth(); document.getElementById('cal-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
   const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
   let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
@@ -1649,6 +1652,52 @@ function renderCalendar() {
     html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
   }
   const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } } html += '</div>';
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+// 모바일 전용 미팅 리스트 뷰
+function renderCalendarList() {
+  const y = calDate.getFullYear(); const m = calDate.getMonth();
+  document.getElementById('cal-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
+  const pad = n => String(n).padStart(2,'0');
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = new Date(); const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+  const days = g_lang==='ko'?['일','월','화','수','목','금','토']:['S','M','T','W','T','F','S'];
+
+  let virtualMeetings = [];
+  if(S.recurringTemplates) S.recurringTemplates.forEach(t => { virtualMeetings = virtualMeetings.concat(generateRecurringInstances(t, 10)); });
+  const combinedMeetings = [...S.meetings, ...virtualMeetings];
+
+  let html = '';
+  for(let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${y}-${pad(m+1)}-${pad(d)}`;
+    const dayMeetings = combinedMeetings.filter(meet => {
+      const md = new Date(meet.datetime);
+      return md.getFullYear()===y && md.getMonth()===m && md.getDate()===d && isVisible(meet,S.currentUser) && (S.viewFilter==='mine'?isAttending(meet,S.currentUser):true);
+    }).sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+    if(dayMeetings.length===0) continue;
+    const isToday = dateStr===todayStr;
+    const dow = new Date(y,m,d).getDay();
+    html += `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:${isToday?'var(--green-bg)':'var(--bg3)'};border-radius:8px;border-left:3px solid ${isToday?'var(--green)':'var(--border2)'}">
+        <span style="font-weight:700;font-size:15px;color:${isToday?'var(--green)':'var(--text)'}">${m+1}/${d}</span>
+        <span style="font-size:12px;color:var(--text3)">${days[dow]}</span>
+        ${isToday?'<span style="font-size:11px;background:var(--green);color:#fff;padding:1px 7px;border-radius:10px">오늘</span>':''}
+      </div>
+      ${dayMeetings.map(meet => {
+        const dt = new Date(meet.datetime); const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        const isMine = isAttending(meet,S.currentUser);
+        return `<div onclick="previewAlarm('${meet.id}')" style="background:var(--bg2);border:1px solid var(--border);border-left:4px solid ${isMine?'var(--brand)':'var(--border2)'};border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--text)">${meet.title}</span>
+            <span style="font-size:12px;color:var(--brand);font-weight:600">${timeStr}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text3)">📍 ${meet.location} · 👤 ${meet.organizer}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  if(!html) html = `<div style="text-align:center;padding:40px;color:var(--text3)">이번 달 미팅이 없습니다</div>`;
   document.getElementById('cal-grid').innerHTML = html;
 }
 
@@ -2137,6 +2186,9 @@ function setSchFilter(filter) {
 }
 function changeSchMonth(diff) { schCalDate.setMonth(schCalDate.getMonth() + diff); renderSchCalendar(); }
 function renderSchCalendar() {
+    // 모바일에서는 리스트 뷰로 표시
+    if(window.innerWidth <= 768) { renderSchList(); return; }
+    
     const y = schCalDate.getFullYear(); const m = schCalDate.getMonth(); document.getElementById('sch-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
     const firstDay = new Date(y, m, 1).getDay(); const daysInMonth = new Date(y, m+1, 0).getDate(); const today = new Date(); const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth()); const todayDate = today.getDate();
     let html = '<div class="cal-header-row">'; const days = g_lang==='ko' ? ['일','월','화','수','목','금','토'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; days.forEach(d => html += `<div>${d}</div>`); html += '</div><div class="cal-body">';
@@ -2158,6 +2210,56 @@ function renderSchCalendar() {
     }
     const totalCells = firstDay + daysInMonth; const remainder = totalCells % 7; if(remainder !== 0) { for(let i=0; i<(7-remainder); i++) { html += `<div class="cal-cell empty"></div>`; } }
     html += '</div>'; document.getElementById('sch-cal-grid').innerHTML = html;
+}
+
+// 모바일 전용 리스트 뷰
+function renderSchList() {
+    const y = schCalDate.getFullYear(); const m = schCalDate.getMonth();
+    document.getElementById('sch-month-label').textContent = `${y}${g_lang==='ko'?'년':'.'} ${m+1}${g_lang==='ko'?'월':''}`;
+    const pad = n => String(n).padStart(2,'0');
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+    const today = new Date(); const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    const days = g_lang==='ko'?['일','월','화','수','목','금','토']:['S','M','T','W','T','F','S'];
+
+    let html = '';
+    for(let d=1; d<=daysInMonth; d++) {
+        const dateStr = `${y}-${pad(m+1)}-${pad(d)}`;
+        const daySchedules = S.schedules.filter(sch => {
+            if(sch.date !== dateStr) return false;
+            if(S.schFilter === 'my') return sch.visibility === 'private' && sch.author === S.currentUser;
+            if(S.schFilter === 'team') return sch.visibility === 'team' && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId);
+            if(S.schFilter === 'all') return sch.visibility === 'public';
+            return false;
+        });
+        if(daySchedules.length === 0) continue; // 일정 없는 날 스킵
+        const isToday = dateStr === todayStr;
+        const dow = new Date(y, m, d).getDay();
+        html += `<div style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;background:${isToday?'var(--green-bg)':'var(--bg3)'};border-radius:8px;border-left:3px solid ${isToday?'var(--green)':'var(--border2)'}">
+                <span style="font-weight:700;font-size:15px;color:${isToday?'var(--green)':'var(--text)'}">${m+1}/${d}</span>
+                <span style="font-size:12px;color:var(--text3)">${days[dow]}</span>
+                ${isToday?'<span style="font-size:11px;background:var(--green);color:#fff;padding:1px 7px;border-radius:10px">오늘</span>':''}
+                <button onclick="openAddSchFromDailyDate('${dateStr}')" style="margin-left:auto;background:var(--brand);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">＋</button>
+            </div>
+            ${daySchedules.map(sch => `
+                <div class="sch-ev ${sch.visibility}" style="margin-bottom:4px;border-radius:8px;padding:8px 12px;cursor:pointer" onclick="openDailyViewModal('${dateStr}')">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                        <span style="font-size:11px;color:var(--text3);font-weight:600">${sch.visibility==='private'?'나만':'👤 '+sch.author}</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text);line-height:1.5;word-break:break-all">${sch.content}</div>
+                </div>`).join('')}
+        </div>`;
+    }
+    if(!html) html = `<div style="text-align:center;padding:40px;color:var(--text3)">이번 달 일정이 없습니다<br><br><button onclick="openAddSchFromDailyDate('${todayStr}')" class="btn btn-primary">＋ 오늘 일정 추가</button></div>`;
+    document.getElementById('sch-cal-grid').innerHTML = html;
+}
+
+function openAddSchFromDailyDate(dateStr) {
+    document.getElementById('add-sch-date').value = dateStr;
+    const dispDate = g_lang==='ko' ? `${dateStr.split('-')[0]}년 ${dateStr.split('-')[1]}월 ${dateStr.split('-')[2]}일` : dateStr;
+    document.getElementById('add-sch-date-label').textContent = `🗓️ ${dispDate}`;
+    document.getElementById('add-sch-content').value = '';
+    document.getElementById('add-sch-overlay').classList.add('show');
 }
 
 function openDailyViewModal(dateStr) {
