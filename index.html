@@ -2658,14 +2658,7 @@ function fixIme(el){
 }
 
 function safeFocus(id){
-    if(window.innerWidth > 768) {
-        setTimeout(() => {
-            try {
-                const el = typeof id === 'string' ? document.getElementById(id) : id;
-                if(el) el.focus();
-            } catch(e){}
-        }, 100);
-    }
+    return; // 모바일 버벅임 및 키보드 먹통 방지를 위해 강제 포커스 완전 무력화
 }
 
 boot();
