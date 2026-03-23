@@ -2871,29 +2871,6 @@ async function switchToGroup(index) {
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
 
-async function autoSyncGroups(name, pw) {
-  try {
-    const res = await fetch(`${SERVER_URL}/api/sync-groups`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, pw })
-    }).then(r => r.json());
-
-    if (Array.isArray(res) && res.length > 0) {
-      let groups = getSavedGroups();
-      res.forEach(fetched => {
-        const idx = groups.findIndex(g => g.companyId === fetched.company_id);
-        if (idx >= 0) {
-          groups[idx].companyName = fetched.company_name; groups[idx].userName = fetched.user_name; groups[idx].pw = fetched.pw;
-        } else {
-          groups.push({ companyId: fetched.company_id, companyName: fetched.company_name, userName: fetched.user_name, pw: fetched.pw });
-        }
-      });
-      saveSavedGroups(groups);
-      if(typeof renderSavedGroups === 'function' && document.getElementById('page-switch-group').classList.contains('active')) renderSavedGroups();
-    }
-  } catch(e) { console.error('동기화 실패:', e); }
-}
-
 boot();
 </script>
 </body>
