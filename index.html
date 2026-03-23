@@ -1367,7 +1367,21 @@ function connectWS() {
         fireEndedNotif(m);
       }
     }
-    if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
+    if(msg.event==='users_updated') { 
+        S.users=msg.data; 
+        buildLoginSelect(); 
+        renderMembers(); 
+        // ★ 실시간 동기화: 내 설정값 즉시 업데이트 및 화면 새로고침
+        if (S.currentUser) {
+            const me = S.users.find(u => u.name === S.currentUser);
+            if (me) {
+                S.todayDoneIds = new Set(me.todayDoneIds || []);
+                if (document.getElementById('today-modal-overlay').classList.contains('show')) {
+                    openTodayModal(); // 팝업창 새로고침
+                }
+            }
+        }
+    }
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
     if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
     if(msg.event==='recurring_updated') { await loadRecurring(); renderRecurringTemplates(); renderDashboard(); }
@@ -2556,8 +2570,8 @@ function openTodayModal() {
 
     const mySchedules = S.schedules.filter(sch => {
         if(sch.date !== todayStr) return false;
-        if(sch.visibility === 'public') return true;
-        if(sch.visibility === 'team' && sch.deptId === S.currentDeptId) return true;
+        if(sch.visibility === 'public' || sch.visibility === 'all') return true;
+        if((sch.visibility === 'team' || !sch.visibility) && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId)) return true;
         if(sch.visibility === 'private' && sch.author === cu) return true;
         return false;
     });
