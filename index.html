@@ -1103,13 +1103,23 @@ function checkAdmin(userName) {
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
   companyId: localStorage.getItem('ma_company_id') || '', 
-  // ★ 추가: 회사 ID  
-  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(),
+  todayDoneIds: new Set(), // ★ 추가됨: 서버 연동 취소선 데이터
+  viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
   recurringTemplates: [],
   recurringOverrides: {},
   recurringCompleted: []
 };
-let selectedRecAttendees = []; // 정기 미팅용 분리
+
+// ★ 추가됨: 체크할 때마다 서버로 데이터를 쏘는 함수
+async function syncUserPrefs() {
+  if (!S.currentUser) return;
+  const prefs = {
+    hiddenIds: [...S.hiddenIds],
+    todayDoneIds: [...S.todayDoneIds]
+  };
+  try { await api('PUT', `/users/${encodeURIComponent(S.currentUser)}/prefs`, prefs); } catch(e) { console.error('동기화 실패:', e); }
+}let selectedRecAttendees = []; // 정기 미팅용 분리
 
 function saveHiddenIds() { try { localStorage.setItem('ma_hidden_ids', JSON.stringify([...S.hiddenIds])); } catch(e) {} }
 function loadHiddenIds() { try { const data = localStorage.getItem('ma_hidden_ids'); if(data) S.hiddenIds = new Set(JSON.parse(data)); } catch(e) { S.hiddenIds = new Set(); } }
@@ -1282,9 +1292,11 @@ async function enterApp(userName) {
   const user = S.users.find(u=>u.name===userName); 
   S.currentDeptId = user ? user.dept_id : '';
   
+  // ★ 추가됨: 로그인할 때 서버에서 내 취소선 데이터를 가져옴
+  S.todayDoneIds = new Set(user?.todayDoneIds || []);
+  
   // 2. 화면 전환 (로그인창 숨기고 메인앱 표시)
-  document.getElementById('company-setup').style.display='none'; 
-  document.getElementById('auth-screen').style.display='none'; 
+  document.getElementById('company-setup').style.display='none';  document.getElementById('auth-screen').style.display='none'; 
   document.getElementById('main-app').style.display='flex';
   
   // 3. 사이드바 정보 업데이트
@@ -2495,18 +2507,15 @@ async function delSchedule(id) {
 // 🔴 TODAY SUMMARY MODAL 로직
 // ═══════════════════════════════════════════════
 function toggleTodayItem(id) {
-    let doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
     const el = document.getElementById('today-item-' + id);
-    
-    if (doneIds.includes(id)) {
-        doneIds = doneIds.filter(x => x !== id);
+    if (S.todayDoneIds.has(String(id))) {
+        S.todayDoneIds.delete(String(id));
         if (el) el.classList.remove('done-strike');
     } else {
-        doneIds.push(id);
+        S.todayDoneIds.add(String(id));
         if (el) el.classList.add('done-strike');
     }
-    
-    localStorage.setItem('ma_today_done', JSON.stringify(doneIds));
+    syncUserPrefs(); // ★ 체크할 때마다 서버 동기화 함수 실행
 }
 
 function openTodayModal() {
@@ -2518,7 +2527,6 @@ function openTodayModal() {
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
     const todayStrDate = now.toDateString();
     const cu = S.currentUser;
-    const doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
 
     let allMeetingsToday = [...S.meetings];
     if (S.recurringTemplates) {
@@ -2540,7 +2548,9 @@ function openTodayModal() {
             const dt = new Date(m.datetime);
             const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             const stat = m.completed ? '✅ ' : '⏰ ';
-            const isDone = doneIds.includes(m.id) ? 'done-strike' : '';
+            
+            // ★ 배열 includes 대신 Set의 has() 사용
+            const isDone = S.todayDoneIds.has(String(m.id)) ? 'done-strike' : '';
             
             return `<div class="today-item meet ${isDone}" id="today-item-${m.id}" onclick="toggleTodayItem('${m.id}')">
                 <div class="today-item-top"><span>${stat}${timeStr}</span><span>📍 ${m.location}</span></div>
@@ -2567,7 +2577,8 @@ function openTodayModal() {
             else if(sch.visibility === 'team') typeTxt = g_lang==='ko'?'팀 일정':'Team';
             else typeTxt = g_lang==='ko'?'전체 일정':'Public';
 
-            const isDone = doneIds.includes(sch.id) ? 'done-strike' : '';
+            // ★ 배열 includes 대신 Set의 has() 사용
+            const isDone = S.todayDoneIds.has(String(sch.id)) ? 'done-strike' : '';
 
             return `<div class="today-item sch-${sch.visibility} ${isDone}" id="today-item-${sch.id}" onclick="toggleTodayItem('${sch.id}')">
                 <div class="today-item-top"><span>${typeTxt}</span><span>👤 ${sch.author}</span></div>
