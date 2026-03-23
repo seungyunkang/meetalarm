@@ -190,6 +190,18 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true, deptId: rows[0].dept_id });
     }
 
+    // ★ 추가: 내 이름과 비밀번호로 가입된 모든 회사 목록 불러오기 (Magic Sync)
+    if (req.method === 'POST' && url === '/api/sync-groups') {
+      const { name, pw } = await getBody();
+      if (!name || !pw) return send({ error: '정보 누락' }, 400);
+      const { rows } = await pool.query(`
+        SELECT u.company_id, c.name as company_name, u.name as user_name, u.pw
+        FROM users u JOIN companies c ON u.company_id = c.id
+        WHERE u.name = $1 AND u.pw = $2
+      `, [name, pw]);
+      return send(rows);
+    }
+
     if (req.method === 'GET' && url === '/api/users') {
       const updatedUsers = await fetchUsers(companyId);
       return send(updatedUsers);
