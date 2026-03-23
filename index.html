@@ -1504,7 +1504,7 @@ function goto(id) {
     renderSavedGroups();
     setTimeout(() => {
       const page = document.getElementById('page-switch-group');
-      if(page) { page.style.display='none'; page.offsetHeight; page.style.display='block'; }
+      if(page) { page.style.display='none'; page.offsetHeight; page.style.display=''; }
     }, 10);
   }
 }
