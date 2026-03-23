@@ -20,7 +20,7 @@
   --red: #dc2626;   --red-bg: #fee2e2;   --red-glow: rgba(220,38,38,.15);
   --purple: #9333ea;--purple-bg: #f3e8ff;
   --text: #111827; --text2: #4b5563; --text3: #6b7280;
-  --radius: 10px; --radius2: 14px; --tr: .18s cubic-bezier(.4,0,.2,1);
+  --radius: 10px; --radius2: 14px; --tr: 0s;
 }
 
 /* ── NIGHT MODE ── */
@@ -72,8 +72,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* ── PAGE ───────────────────── */
 .page{display:none}
-.page.active{display:block;animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.page.active{display:block;}
+/* @keyframes fadeIn 전체 삭제 */
 .page-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
 .page-title{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;color:var(--text)}
 .page-sub{color:var(--text2);font-size:17px}
@@ -235,10 +235,10 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .auth-ok.show{display:block}
 
 /* ── OVERLAY / MODAL ─────────── */
-.overlay{position:fixed;inset:0;background:rgba(17,24,39,.75);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.75);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;}
 [data-theme="dark"] .overlay { background:rgba(0,0,0,.9); }
 .overlay.show{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);transform:scale(.95) translateZ(0);transition:transform .2s ease-out; -webkit-transform:translateZ(0); will-change:transform, opacity}
+.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);}
 .modal.minutes-lg { max-width: 750px; width: 95%; } 
 .overlay.show .modal{transform:translateZ(0); transition:none;}
 .modal.mod-first{border-top:6px solid var(--brand)}
@@ -1074,15 +1074,8 @@ function fixIme(el){
 }
 
 function safeFocus(id){
-    // 모바일에서 강제 포커스는 키보드 문제 유발 - 비활성화
-    if(window.innerWidth > 768) {
-        setTimeout(() => {
-            try {
-                const el = typeof id === 'string' ? document.getElementById(id) : id;
-                if(el) el.focus();
-            } catch(e){}
-        }, 100);
-    }
+    // 모바일 키보드(IME) 먹통 및 버벅거림 방지를 위해 강제 포커스 기능 완전 비활성화
+    return;
 }
 
 // Electron 환경에서는 preload.js의 electronAPI 사용, 웹에서는 null
