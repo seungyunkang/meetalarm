@@ -739,15 +739,14 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
         <div class="form-card">
           <div class="form-card-title">➕ 새 회사(그룹) 연결하기</div>
           <div class="form-row-2">
-            <div><label class="form-label">초대 코드 *</label><input class="form-input" id="sg-code" placeholder="예: AB1C23" /></div>
-            <div><label class="form-label">본인 이름 *</label><input class="form-input" id="sg-name" placeholder="가입된 이름" /></div>
+            <div><label class="form-label">초대 코드 *</label><input class="form-input" id="sg-code" placeholder="예: AB1C23" autocomplete="off" /></div>
+            <div><label class="form-label">정확한 회사명 *</label><input class="form-input" id="sg-co-name" placeholder="가입된 회사명" autocomplete="off" /></div>
           </div>
           <div class="form-row-2">
+            <div><label class="form-label">본인 이름 *</label><input class="form-input" id="sg-name" placeholder="가입된 이름" autocomplete="off" /></div>
             <div><label class="form-label">비밀번호 *</label><input class="form-input" type="password" id="sg-pw" placeholder="해당 그룹의 비밀번호" onkeydown="if(event.key==='Enter')verifyAndAddGroup()" /></div>
-            <div style="display:flex; align-items:flex-end;">
-              <button class="btn btn-primary btn-full" onclick="verifyAndAddGroup()">검증 및 추가</button>
-            </div>
           </div>
+          <button class="btn btn-primary btn-full" style="margin-bottom:6px;" onclick="verifyAndAddGroup()">검증 및 내 목록에 추가</button>
         </div>
 
         <div style="font-size:14px; font-weight:700; color:var(--text); margin:24px 0 12px;">✅ 등록된 회사(그룹) 목록</div>
@@ -1316,7 +1315,30 @@ async function doLogin() {
   if(!pw){ errEl.textContent='비밀번호를 입력하세요'; errEl.classList.add('show'); return; }
   const r = await api('POST','/login',{name, pw, companyId: S.companyId});
   if(r.error){ errEl.textContent=r.error; errEl.classList.add('show'); return; }
-  errEl.classList.remove('show'); localStorage.setItem('ma_user', name); 
+  errEl.classList.remove('show'); localStorage.setItem('ma_user', name);
+
+  // ★ 완벽 격리: 로그인한 사람만의 "독립된 프로필 가방" 생성/불러오기
+  try {
+    let profiles = JSON.parse(localStorage.getItem('ma_profiles') || '[]');
+    let existingProf = profiles.find(p => p.accounts.some(a => a.companyId === S.companyId && a.userName === name));
+    
+    if (existingProf) {
+      // 내 가방이 이미 있으면 비번 최신화 후 장착
+      const acc = existingProf.accounts.find(a => a.companyId === S.companyId && a.userName === name);
+      if(acc) acc.pw = pw;
+      localStorage.setItem('ma_current_prof_id', existingProf.id);
+    } else {
+      // 처음 로그인하면 나만의 새 가방 발급
+      const newProfId = 'prof_' + Date.now() + Math.floor(Math.random()*1000);
+      const cName = localStorage.getItem('ma_company_name') || '현재 회사';
+      profiles.push({ id: newProfId, accounts: [{ companyId: S.companyId, companyName: cName, userName: name, pw: pw }] });
+      localStorage.setItem('ma_current_prof_id', newProfId);
+    }
+    localStorage.setItem('ma_profiles', JSON.stringify(profiles));
+  } catch(e) {}
+
+  enterApp(name);
+}
   
   // ★ 추가: 로그인 성공 시 현재 그룹 저장 및 다른 기기에서 추가한 그룹 목록(Magic Sync) 끌어오기
   if (typeof autoSyncGroups === 'function') {
@@ -2741,58 +2763,66 @@ function safeFocus(id){
 }
 
 // ═══════════════════════════════════════════════
-// 🔴 멀티 그룹 전환 및 자동 동기화 (Magic Sync) 로직
+// 🔴 독립형 멀티 프로필 (Private Profile) 로직
 // ═══════════════════════════════════════════════
-function getSavedGroups() {
-  try { return JSON.parse(localStorage.getItem('ma_saved_groups') || '[]'); } catch(e) { return []; }
-}
-
-function saveSavedGroups(groups) {
-  localStorage.setItem('ma_saved_groups', JSON.stringify(groups));
+function getProfiles() { try { return JSON.parse(localStorage.getItem('ma_profiles') || '[]'); } catch(e) { return []; } }
+function saveProfiles(profiles) { localStorage.setItem('ma_profiles', JSON.stringify(profiles)); }
+function getCurrentProfile() {
+  const pId = localStorage.getItem('ma_current_prof_id');
+  return getProfiles().find(p => p.id === pId) || null;
 }
 
 async function verifyAndAddGroup() {
   const code = document.getElementById('sg-code').value.trim().toUpperCase();
+  const coName = document.getElementById('sg-co-name').value.trim();
   const name = document.getElementById('sg-name').value.trim();
   const pw = document.getElementById('sg-pw').value;
 
-  if(!code || !name || !pw) return toast('초대코드, 이름, 비밀번호를 모두 입력하세요', 'error');
+  if(!code || !coName || !name || !pw) return toast('초대코드, 회사명, 이름, 비밀번호를 모두 정확히 입력하세요', 'error');
   const btn = document.querySelector('button[onclick="verifyAndAddGroup()"]'); btn.disabled = true;
 
   try {
     const resCo = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r=>r.json());
     if(resCo.error) throw new Error('유효하지 않은 초대코드입니다');
+    
+    // ★ 4중 보안: 입력한 회사명과 서버의 실제 회사명 완벽 일치 검증
+    if(resCo.name !== coName) throw new Error('입력하신 회사명이 실제와 다릅니다. 정확히 입력해주세요.');
 
     const resLogin = await api('POST', '/login', { name, pw, companyId: resCo.id });
     if(resLogin.error) throw new Error('이름 또는 비밀번호가 일치하지 않습니다');
 
-    let groups = getSavedGroups();
-    const existingIdx = groups.findIndex(g => g.companyId === resCo.id && g.userName === name);
-    if(existingIdx >= 0) { groups[existingIdx].pw = pw; } 
-    else { groups.push({ companyId: resCo.id, companyName: resCo.name, userName: name, pw: pw }); }
-    saveSavedGroups(groups);
+    // ★ 내 가방에만 이 회사를 추가함
+    let profiles = getProfiles();
+    let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
     
-    // ★ 추가 그룹 등록 시 서버에서 내 전체 그룹 목록 동기화
-    await autoSyncGroups(name, pw);
+    if(!currProf) {
+      currProf = { id: 'prof_' + Date.now(), accounts: [] };
+      profiles.push(currProf);
+      localStorage.setItem('ma_current_prof_id', currProf.id);
+    }
+
+    const existingIdx = currProf.accounts.findIndex(a => a.companyId === resCo.id && a.userName === name);
+    if(existingIdx >= 0) { 
+      currProf.accounts[existingIdx].pw = pw; 
+      currProf.accounts[existingIdx].companyName = resCo.name;
+    } else { 
+      currProf.accounts.push({ companyId: resCo.id, companyName: resCo.name, userName: name, pw: pw }); 
+    }
+    saveProfiles(profiles);
     
-    document.getElementById('sg-code').value = ''; document.getElementById('sg-name').value = ''; document.getElementById('sg-pw').value = '';
-    toast(`"${resCo.name}" 그룹이 성공적으로 등록되었습니다!`, 'success');
+    document.getElementById('sg-code').value = ''; document.getElementById('sg-co-name').value = ''; document.getElementById('sg-name').value = ''; document.getElementById('sg-pw').value = '';
+    toast(`"${resCo.name}" 그룹이 내 목록에 연결되었습니다!`, 'success');
     renderSavedGroups();
   } catch(e) { toast(e.message || '검증 중 오류가 발생했습니다', 'error'); } finally { btn.disabled = false; }
 }
 
 function renderSavedGroups() {
-  let groups = getSavedGroups();
+  const prof = getCurrentProfile();
+  const groups = prof ? prof.accounts : [];
   const el = document.getElementById('saved-groups-list');
-  
-  if(S.companyId && S.currentUser && !groups.find(g => g.companyId === S.companyId && g.userName === S.currentUser)) {
-     const currentName = localStorage.getItem('ma_company_name') || '현재 회사';
-     groups.push({ companyId: S.companyId, companyName: currentName, userName: S.currentUser, pw: '' });
-     saveSavedGroups(groups);
-  }
 
   if(groups.length === 0) {
-    el.innerHTML = `<div class="empty" style="padding:40px;"><div class="empty-icon">🏢</div><div class="empty-text">등록된 그룹이 없습니다.</div></div>`; return;
+    el.innerHTML = `<div class="empty" style="padding:40px;"><div class="empty-icon">🏢</div><div class="empty-text">연결된 그룹이 없습니다.</div></div>`; return;
   }
 
   el.innerHTML = groups.map((g, index) => {
@@ -2813,19 +2843,30 @@ function renderSavedGroups() {
 }
 
 function removeGroup(index) {
-  if(!confirm('이 회사(그룹) 연결을 기기에서 삭제하시겠습니까? (계정 자체가 삭제되는 것은 아닙니다)')) return;
-  let groups = getSavedGroups(); groups.splice(index, 1); saveSavedGroups(groups); renderSavedGroups();
+  if(!confirm('내 기기에서 이 연결을 삭제하시겠습니까?')) return;
+  let profiles = getProfiles();
+  let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
+  if(currProf) {
+    currProf.accounts.splice(index, 1);
+    saveProfiles(profiles);
+    renderSavedGroups();
+  }
 }
 
 async function switchToGroup(index) {
-  const groups = getSavedGroups(); const g = groups[index]; if(!g) return;
-  // 속도를 위해 전환 확인 팝업 생략 (즉시 이동)
+  const prof = getCurrentProfile();
+  if(!prof) return;
+  const g = prof.accounts[index]; 
+  if(!g) return;
 
   try {
-    if (g.pw) {      const resLogin = await api('POST', '/login', { name: g.userName, pw: g.pw, companyId: g.companyId });
-      if(resLogin.error) throw new Error('비밀번호가 변경되었습니다. 삭제하고 다시 추가해주세요.');
+    if (g.pw) {
+      const resLogin = await api('POST', '/login', { name: g.userName, pw: g.pw, companyId: g.companyId });
+      if(resLogin.error) throw new Error('비밀번호가 변경되었습니다. 연결을 삭제하고 다시 추가해주세요.');
     }
-    localStorage.setItem('ma_company_id', g.companyId); localStorage.setItem('ma_company_name', g.companyName); localStorage.setItem('ma_user', g.userName);
+    localStorage.setItem('ma_company_id', g.companyId); 
+    localStorage.setItem('ma_company_name', g.companyName); 
+    localStorage.setItem('ma_user', g.userName);
     location.reload();
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
