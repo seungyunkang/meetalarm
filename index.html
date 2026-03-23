@@ -92,15 +92,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .cal-grid { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:var(--radius2); overflow:hidden; background:var(--bg2); box-shadow:0 2px 8px rgba(0,0,0,.03); }
 .cal-header-row { display:grid; grid-template-columns:repeat(7, 1fr); background:var(--bg3); border-bottom:1px solid var(--border); text-align:center; font-size:16px; font-weight:600; padding:10px 0; color:var(--text2); }
 .cal-body { display:grid; grid-template-columns:repeat(7, 1fr); grid-auto-rows:minmax(110px, auto); }
-.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px; display:flex; flex-direction:column; gap:4px; transition:background .2s; }
+/* ★ min-width:0; overflow:hidden; 추가됨 */
+.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px; display:flex; flex-direction:column; gap:4px; transition:background .2s; overflow:hidden; min-width:0; }
 .cal-cell:hover { background:var(--bg3); }
 .cal-cell:nth-child(7n) { border-right:none; }
 .cal-cell.empty { background:var(--bg); }
 .cal-cell.today { background:var(--green-bg); box-shadow:inset 0 0 0 1px var(--green); position:relative; z-index:1; }
 .cal-date { font-size:17px; font-weight:700; margin-bottom:6px; padding-left:2px; color:var(--text2); }
 .cal-cell.today .cal-date { color:var(--green); }
-.cal-ev-list { display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto; scrollbar-width:none; }
-.cal-ev-list::-webkit-scrollbar { display:none; }
+/* ★ overflow-x:hidden; 추가됨 */
+.cal-ev-list { display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }.cal-ev-list::-webkit-scrollbar { display:none; }
 .cal-ev { font-size:15px; padding:4px 6px; border-radius:6px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
 .cal-ev:hover { filter:brightness(0.95); transform:translateX(2px); }
 .cal-ev.mine { background:var(--brand); color:#fff; font-weight:600; }
