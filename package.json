@@ -23,11 +23,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "icon.png"
@@ -37,12 +41,19 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "installerLanguages": ["ko_KR", "en_US"],
+      "installerLanguages": [
+        "ko_KR",
+        "en_US"
+      ],
       "language": "1042"
     }
   },
   "devDependencies": {
     "electron": "^28.0.0",
     "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "pg": "^8.20.0",
+    "ws": "^8.20.0"
   }
 }
