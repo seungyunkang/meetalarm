@@ -1171,14 +1171,13 @@ function showCompanySetup() {
 }
 
 function showCoTab(tab) {
-  document.getElementById('co-join').style.display = tab === 'join' ? 'block' : 'none';
-  document.getElementById('co-create').style.display = tab === 'create' ? 'block' : 'none';
-  document.getElementById('tab-join-btn').classList.toggle('active', tab === 'join');
-  document.getElementById('tab-create-btn').classList.toggle('active', tab === 'create');
-  
-  // ★ 탭 이동 즉시 포커스 강제 삽입 (터치 먹통 원천 차단)
-  if(tab === 'join') document.getElementById('invite-code-input').focus();
-  if(tab === 'create') document.getElementById('new-company-name').focus();
+  // 탭 터치 처리가 끝난 0.01초 뒤에 화면을 열어주어 터치 꼬임 완벽 방지
+  setTimeout(() => {
+    document.getElementById('co-join').style.display = tab === 'join' ? 'block' : 'none';
+    document.getElementById('co-create').style.display = tab === 'create' ? 'block' : 'none';
+    document.getElementById('tab-join-btn').classList.toggle('active', tab === 'join');
+    document.getElementById('tab-create-btn').classList.toggle('active', tab === 'create');
+  }, 10);
 }async function checkInviteCode() {
   const code = document.getElementById('invite-code-input').value.trim().toUpperCase();
   if (!code) return alert('코드를 입력하세요');
@@ -1242,13 +1241,13 @@ function showCompanySetup() {
 function changeServer() { localStorage.clear(); location.reload(); }
 function showAuthScreen() { document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='flex'; document.getElementById('main-app').style.display='none'; buildLoginSelect(); buildRegDeptSelect(); }
 function showAuthTab(tab) { 
-  document.getElementById('tab-login').style.display = tab==='login'?'block':'none'; 
-  document.getElementById('tab-reg').style.display = tab==='register'?'block':'none'; 
-  document.getElementById('tab-login-btn').classList.toggle('active', tab==='login'); 
-  document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register'); 
-  
-  // ★ 탭 이동 즉시 포커스 강제 삽입 (이름 칸 먹통 완벽 해결)
-  if(tab === 'register') document.getElementById('reg-name').focus();
+  // 탭 터치 처리가 끝난 0.01초 뒤에 화면을 열어주어 터치 꼬임 완벽 방지
+  setTimeout(() => {
+    document.getElementById('tab-login').style.display = tab==='login'?'block':'none'; 
+    document.getElementById('tab-reg').style.display = tab==='register'?'block':'none'; 
+    document.getElementById('tab-login-btn').classList.toggle('active', tab==='login'); 
+    document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register'); 
+  }, 10);
 }
 function buildLoginSelect() { const sel=document.getElementById('login-name'); sel.innerHTML=S.users.map(u=>`<option value="${u.name}">${u.name} (${S.depts.find(d=>d.id===u.dept_id)?.name||u.dept_id})</option>`).join(''); }
 function buildRegDeptSelect() { 
