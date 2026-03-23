@@ -1339,22 +1339,8 @@ async function doLogin() {
 
   enterApp(name);
 }
-  
-  // ★ 추가: 로그인 성공 시 현재 그룹 저장 및 다른 기기에서 추가한 그룹 목록(Magic Sync) 끌어오기
-  if (typeof autoSyncGroups === 'function') {
-    let groups = getSavedGroups();
-    const existingIdx = groups.findIndex(g => g.companyId === S.companyId && g.userName === name);
-    const cName = localStorage.getItem('ma_company_name') || '현재 회사';
-    if(existingIdx >= 0) groups[existingIdx].pw = pw;
-    else groups.push({ companyId: S.companyId, companyName: cName, userName: name, pw: pw });
-    saveSavedGroups(groups);
-    await autoSyncGroups(name, pw);
-  }
-  
-  enterApp(name);
-}
-async function doRegister() {
-  const name=document.getElementById('reg-name').value.trim(); const deptId=document.getElementById('reg-dept').value || ''; const pw=document.getElementById('reg-pw').value; const pw2=document.getElementById('reg-pw2').value;
+
+async function doRegister() {  const name=document.getElementById('reg-name').value.trim(); const deptId=document.getElementById('reg-dept').value || ''; const pw=document.getElementById('reg-pw').value; const pw2=document.getElementById('reg-pw2').value;
   const errEl=document.getElementById('reg-err'); const okEl=document.getElementById('reg-ok');
   if(!name){ errEl.textContent='이름을 입력하세요'; errEl.classList.add('show'); return; }
   if(pw.length<4){ errEl.textContent='비밀번호는 4자 이상'; errEl.classList.add('show'); return; }
