@@ -997,6 +997,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('switch-group');toggleMobileMore()">
+      <span class="mobile-tab-icon">🏢</span><span>회사전환</span>
+    </button>
     
     <button class="mobile-tab" id="mobile-nav-settings" style="display:none;background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('settings');toggleMobileMore()">
       <span class="mobile-tab-icon">⚙️</span><span>연동설정</span>
@@ -1139,19 +1142,12 @@ let S = {
   recurringCompleted: []
 };
 
-// ★ 백업 시 비밀번호(pw)까지 함께 묶어서 서버의 내 프로필에 저장합니다.
+// ★ 추가됨: 서버로 데이터 보내기
 async function syncUserPrefs() {
   if (!S.currentUser) return;
-  let linked = [];
-  try {
-    const prof = getCurrentProfile();
-    if (prof) linked = prof.accounts.map(a => ({ companyId: a.companyId, companyName: a.companyName, userName: a.userName, pw: a.pw }));
-  } catch(e) {}
-  const prefs = { hiddenIds: [...S.hiddenIds], todayDoneIds: [...S.todayDoneIds], linkedGroups: linked };
+  const prefs = { hiddenIds: [...S.hiddenIds], todayDoneIds: [...S.todayDoneIds] };
   try { await api('PUT', `/users/${encodeURIComponent(S.currentUser)}/prefs`, prefs); } catch(e) { }
-}
-
-let selectedRecAttendees = []; // 정기 미팅용 분리
+}let selectedRecAttendees = []; // 정기 미팅용 분리
 
 function saveHiddenIds() { try { localStorage.setItem('ma_hidden_ids', JSON.stringify([...S.hiddenIds])); } catch(e) {} }
 function loadHiddenIds() { try { const data = localStorage.getItem('ma_hidden_ids'); if(data) S.hiddenIds = new Set(JSON.parse(data)); } catch(e) { S.hiddenIds = new Set(); } }
@@ -1364,28 +1360,10 @@ async function enterApp(userName) {
   const user = S.users.find(u=>u.name===userName); 
   S.currentDeptId = user ? user.dept_id : '';
   
-  // ★ 추가됨: 서버에서 취소선 및 다른 기기에서 추가한 회사 껍데기 목록 가져오기
+  // ★ 추가됨: 서버에서 취소선 가져오기
   S.todayDoneIds = new Set(user?.todayDoneIds || []);
   
-  if (user && user.linkedGroups && user.linkedGroups.length > 0) {
-    try {
-      let profiles = getProfiles();
-      let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
-      if (currProf) {
-        let changed = false;
-        user.linkedGroups.forEach(lg => {
-          if (!currProf.accounts.find(a => a.companyId === lg.companyId && a.userName === lg.userName)) {
-            // 서버에서 내려받을 때 비밀번호(lg.pw)도 함께 내 가방에 장착합니다.
-            currProf.accounts.push({ companyId: lg.companyId, companyName: lg.companyName, userName: lg.userName, pw: lg.pw || '' });
-            changed = true;
-          }
-        });
-        if (changed) saveProfiles(profiles);
-      }
-    } catch(e) {}
-  }
-  
-  // 2. 화면 전환 (로그인창 숨기고 메인앱 표시)  document.getElementById('company-setup').style.display='none';
+  // 2. 화면 전환 (로그인창 숨기고 메인앱 표시)  document.getElementById('company-setup').style.display='none'; 
   document.getElementById('auth-screen').style.display='none'; 
   document.getElementById('main-app').style.display='flex';
   
@@ -2793,11 +2771,13 @@ async function verifyAndAddGroup() {
     const resCo = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r=>r.json());
     if(resCo.error) throw new Error('유효하지 않은 초대코드입니다');
     
+    // ★ 4중 보안: 입력한 회사명과 서버의 실제 회사명 완벽 일치 검증
     if(resCo.name !== coName) throw new Error('입력하신 회사명이 실제와 다릅니다. 정확히 입력해주세요.');
 
     const resLogin = await api('POST', '/login', { name, pw, companyId: resCo.id });
     if(resLogin.error) throw new Error('이름 또는 비밀번호가 일치하지 않습니다');
 
+    // ★ 내 가방에만 이 회사를 추가함
     let profiles = getProfiles();
     let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
     
@@ -2814,9 +2794,7 @@ async function verifyAndAddGroup() {
     } else { 
       currProf.accounts.push({ companyId: resCo.id, companyName: resCo.name, userName: name, pw: pw }); 
     }
-    
     saveProfiles(profiles);
-    syncUserPrefs(); // ★ 내 기기에 회사를 추가했으니 서버에도 목록 동기화
     
     document.getElementById('sg-code').value = ''; document.getElementById('sg-co-name').value = ''; document.getElementById('sg-name').value = ''; document.getElementById('sg-pw').value = '';
     toast(`"${resCo.name}" 그룹이 내 목록에 연결되었습니다!`, 'success');
@@ -2857,7 +2835,6 @@ function removeGroup(index) {
   if(currProf) {
     currProf.accounts.splice(index, 1);
     saveProfiles(profiles);
-    syncUserPrefs(); // ★ 기기에서 삭제했으니 서버 목록도 업데이트
     renderSavedGroups();
   }
 }
@@ -2869,12 +2846,10 @@ async function switchToGroup(index) {
   if(!g) return;
 
   try {
-    // 이미 가방에 비밀번호가 들어있으므로 귀찮게 묻지 않고 서버로 바로 직행합니다.
     if (g.pw) {
       const resLogin = await api('POST', '/login', { name: g.userName, pw: g.pw, companyId: g.companyId });
       if(resLogin.error) throw new Error('비밀번호가 변경되었습니다. 연결을 삭제하고 다시 추가해주세요.');
     }
-    
     localStorage.setItem('ma_company_id', g.companyId); 
     localStorage.setItem('ma_company_name', g.companyName); 
     localStorage.setItem('ma_user', g.userName);
