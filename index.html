@@ -317,7 +317,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 /* ── 모바일 하단 탭바 ────────── */
 .mobile-tabbar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:8000;padding:6px 0 env(safe-area-inset-bottom,6px)}
 .mobile-tabbar-inner{display:flex;justify-content:space-around;align-items:center}
-.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;min-width:52px}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;min-width:45px}
 .mobile-tab.active{color:var(--brand)}
 .mobile-tab-icon{font-size:20px;line-height:1}
 .mobile-tab-badge{position:absolute;top:-2px;right:-2px;background:var(--brand);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center}
@@ -965,7 +965,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <span class="mobile-tab-icon">✏️</span>
       <span>등록</span>
     </button>
-    <button class="mobile-tab" id="mtab-schedules" onclick="goto('schedules')">
+   <button class="mobile-tab" id="mtab-schedules" onclick="goto('schedules')">
       <span class="mobile-tab-icon">🗓️</span>
       <span>일정</span>
     </button>
@@ -973,6 +973,12 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <span class="mobile-tab-icon">⭐</span>
       <span>오늘</span>
     </button>
+    
+  <button class="mobile-tab" id="mtab-switch-group" onclick="goto('switch-group')">
+      <span class="mobile-tab-icon">🏢🏢</span>
+      <span>회사변경</span>
+    </button>
+    
     <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
       <span class="mobile-tab-icon">☰</span>
       <span>더보기</span>
