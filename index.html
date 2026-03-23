@@ -169,7 +169,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .form-row{margin-bottom:13px}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
 .form-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
-.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02);-webkit-appearance:none;touch-action:manipulation;transform:translateZ(0);}.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}.form-input::placeholder{color:var(--border3)}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-user-select:text; user-select:text; -webkit-appearance:none; position:relative; z-index:1;}.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
+.form-input::placeholder{color:var(--border3)}
 textarea.form-input{resize:vertical;min-height:76px}
 select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .alarm-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
@@ -735,7 +736,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
           </div>
         </div>
         
-   <div class="form-card">
+        <div class="form-card">
           <div class="form-card-title">➕ 새 회사(그룹) 연결하기</div>
           <div class="form-row-2">
             <div><label class="form-label">초대 코드 *</label><input class="form-input" id="sg-code" placeholder="예: AB1C23" autocomplete="off" /></div>
@@ -996,7 +997,10 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
-        
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('switch-group');toggleMobileMore()">
+      <span class="mobile-tab-icon">🏢</span><span>회사전환</span>
+    </button>
+    
     <button class="mobile-tab" id="mobile-nav-settings" style="display:none;background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('settings');toggleMobileMore()">
       <span class="mobile-tab-icon">⚙️</span><span>연동설정</span>
     </button>
@@ -1499,14 +1503,8 @@ function goto(id) {
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
   
-  // ★ 모바일 키보드 먹통 버그 근본 해결 (강제 렌더링)
-  if(id==='switch-group') {
-    renderSavedGroups();
-    setTimeout(() => {
-      const page = document.getElementById('page-switch-group');
-      if(page) { page.style.display='none'; page.offsetHeight; page.style.display=''; }
-    }, 10);
-  }
+  // ★ 추가: 멀티 프로필 페이지 연결
+  if(id==='switch-group') renderSavedGroups();
 }
 
 function toggleMobileMore() {
