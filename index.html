@@ -71,18 +71,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .logout-btn:hover{background:var(--bg3);color:var(--text)}
 
 /* ── PAGE ───────────────────── */
-/* ── PAGE ───────────────────── */
-/* ── PAGE ───────────────────── */
-.page {
-  display: none; /* 완전히 숨김 */
-}
-.page.active {
-  display: block; /* 나타날 때 새로 렌더링하여 입력기 연결 강제 */
-  position: relative;
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 1;
-}
+.page{display:none}
+.page.active{display:block;}
 /* @keyframes fadeIn 전체 삭제 */
 .page-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
 .page-title{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;color:var(--text)}
@@ -1493,34 +1483,33 @@ async function loadMeetings() {
 }
 
 function goto(id) {
-  // 1. 현재 남아있는 포커스 강제 해제 (키보드 꼬임 방지)
-  if(document.activeElement && document.activeElement.tagName !== 'BODY') {
-    document.activeElement.blur();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); 
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active'); 
+  const navBtn = document.getElementById('nav-'+id);
+  if(navBtn) navBtn.classList.add('active');
+  
+  document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
+  const mtab = document.getElementById('mtab-'+id);
+  if(mtab) mtab.classList.add('active');
+  document.getElementById('mobile-more-menu').style.display = 'none';
+
+  if(id==='dashboard') renderDashboard(); 
+  if(id==='schedules') renderSchCalendar(); 
+  if(id==='members') renderMembers(); 
+  if(id==='settings') { if(!checkAdmin(S.currentUser)) { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
+  if(id==='recurring') renderRecurringTemplates();
+  if(id==='archive') renderArchive();
+  
+  
+ // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
+  // 브라우저 렌더링 엔진과 IME 스레드 충돌 방지를 위해 강제 렌더링 제거
+  // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
+  // 브라우저 렌더링 엔진과 IME 스레드 충돌 방지를 위해 강제 렌더링 제거
+  if(id==='switch-group') {
+    renderSavedGroups();
   }
-
-  // 2. 터치 이벤트 사이클이 완전히 종료된 후 화면 전환 (비동기 처리)
-  setTimeout(() => {
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('page-'+id).classList.add('active');
-    
-    const navBtn = document.getElementById('nav-'+id);
-    if(navBtn) navBtn.classList.add('active');
-    
-    document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
-    const mtab = document.getElementById('mtab-'+id);
-    if(mtab) mtab.classList.add('active');
-    document.getElementById('mobile-more-menu').style.display = 'none';
-
-    if(id==='dashboard') renderDashboard(); 
-    if(id==='schedules') renderSchCalendar(); 
-    if(id==='members') renderMembers(); 
-    if(id==='settings') { if(!checkAdmin(S.currentUser)) { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
-    if(id==='recurring') renderRecurringTemplates();
-    if(id==='archive') renderArchive();
-    if(id==='switch-group') renderSavedGroups();
-  }, 10);
-} // ★ 누락되었던 괄호 복구 완료
+} // 이 닫는 괄호를 반드시 추가해야 합니다!
 
 function toggleMobileMore() {
   const menu = document.getElementById('mobile-more-menu');
@@ -2872,24 +2861,6 @@ async function switchToGroup(index) {
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
 
-
-  document.querySelectorAll('.form-input').forEach(el => {
-    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === '')) {
-      el.addEventListener('focus', function() {
-        if (!this._imeReset) {
-          this._imeReset = true; // 최초 1회만 실행
-          
-          // 키보드 언어(한글)는 유지하면서, 입력 스레드만 끊었다가 다시 연결
-          const originalReadOnly = this.readOnly;
-          this.readOnly = true; 
-          
-          setTimeout(() => { 
-            this.readOnly = originalReadOnly; 
-          }, 10);
-        }
-      });
-    }
-  });
 boot();
 </script>
 </body>
