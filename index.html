@@ -2871,9 +2871,7 @@ async function switchToGroup(index) {
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
 
-// ... (위쪽 기존 자바스크립트 코드들) ...
 
-  // ★ 안드로이드 IME(한글 키보드) 꼬임 자동 복구 스크립트
   document.querySelectorAll('.form-input').forEach(el => {
     if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === '')) {
       el.addEventListener('focus', function() {
