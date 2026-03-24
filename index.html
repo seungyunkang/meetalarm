@@ -169,7 +169,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .form-row{margin-bottom:13px}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
 .form-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
-.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-appearance:none; -webkit-user-select:text !important; user-select:text !important;}.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-appearance:none; -webkit-user-select:auto; user-select:auto;}.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
 .form-input::placeholder{color:var(--border3)}
 textarea.form-input{resize:vertical;min-height:76px}
 select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
@@ -2860,6 +2860,25 @@ async function switchToGroup(index) {
     location.reload();
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
+
+  // ★ 안드로이드 IME(한글 키보드) 꼬임 자동 복구 스크립트
+  document.querySelectorAll('.form-input').forEach(el => {
+    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === '')) {
+      el.addEventListener('focus', function() {
+        if (!this._imeReset) {
+          this._imeReset = true; // 최초 1회만 실행
+          
+          // 키보드 언어(한글)는 유지하면서, 입력 스레드만 0.01초간 끊었다가 다시 연결
+          const originalReadOnly = this.readOnly;
+          this.readOnly = true; 
+          
+          setTimeout(() => { 
+            this.readOnly = originalReadOnly; 
+          }, 10);
+        }
+      });
+    }
+  });
 
 boot();
 </script>
