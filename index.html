@@ -72,16 +72,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* ── PAGE ───────────────────── */
 /* ── PAGE ───────────────────── */
+/* ── PAGE ───────────────────── */
 .page {
-  position: absolute;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
+  display: none; /* 완전히 숨김 */
 }
 .page.active {
+  display: block; /* 나타날 때 새로 렌더링하여 입력기 연결 강제 */
   position: relative;
-  visibility: visible;
   opacity: 1;
   pointer-events: auto;
   z-index: 1;
@@ -2874,7 +2871,30 @@ async function switchToGroup(index) {
   } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
 }
 
-boot();
+// ... (위쪽 기존 자바스크립트 코드들) ...
+
+  // ★ 안드로이드 IME(한글 키보드) 꼬임 자동 복구 스크립트
+  // 사용자가 텍스트칸을 처음 터치할 때, 0.01초간 비밀번호 칸으로 변신시켰다가 원복하여 키보드를 강제 리셋합니다.
+  document.querySelectorAll('.form-input').forEach(el => {
+    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === '')) {
+      el.addEventListener('focus', function() {
+        if (!this._imeReset) {
+          this._imeReset = true; // 각 입력창마다 최초 1회만 실행
+          
+          // 1. 타입을 password로 바꿔 고장난 키보드 스레드 강제 파괴
+          this.type = 'password'; 
+          
+          // 2. 10ms 후 즉시 원래 상태(text)로 복구하여 깨끗한 한글 스레드 재연결
+          setTimeout(() => { 
+            this.type = 'text'; 
+          }, 10);
+        }
+      });
+    }
+  });
+
+  // 초기화 함수 실행
+  boot();
 </script>
 </body>
 </html>
