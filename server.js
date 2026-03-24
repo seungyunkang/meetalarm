@@ -132,10 +132,12 @@ const httpServer = http.createServer(async (req, res) => {
     req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch(e) { resolve({}); } });
   });
 
+  
   // 유저 목록 불러오기 (설정값 변환 헬퍼 함수)
   const fetchUsers = async (cId) => {
-    const { rows } = await pool.query('SELECT name,dept_id,hidden_ids,today_done_ids FROM users WHERE company_id=$1 ORDER BY created_at ASC', [cId]);
-    return rows.map(r => ({ 
+    // ★ NULLS FIRST와 name ASC를 추가하여 어떤 수정을 가해도 순서가 절대 섞이지 않게 고정
+    const { rows } = await pool.query('SELECT name,dept_id,hidden_ids,today_done_ids FROM users WHERE company_id=$1 ORDER BY created_at ASC NULLS FIRST, name ASC', [cId]);
+    return rows.map(r => ({
       ...r, 
       hiddenIds: r.hidden_ids ? JSON.parse(r.hidden_ids) : [],
       todayDoneIds: r.today_done_ids ? JSON.parse(r.today_done_ids) : []
