@@ -1500,11 +1500,13 @@ function goto(id) {
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
   
-  // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
+  
+ // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
   // 브라우저 렌더링 엔진과 IME 스레드 충돌 방지를 위해 강제 렌더링 제거
   if(id==='switch-group') {
     renderSavedGroups();
   }
+} // 이 닫는 괄호를 반드시 추가해야 합니다!
 
 function toggleMobileMore() {
   const menu = document.getElementById('mobile-more-menu');
