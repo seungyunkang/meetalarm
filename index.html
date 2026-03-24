@@ -71,8 +71,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .logout-btn:hover{background:var(--bg3);color:var(--text)}
 
 /* ── PAGE ───────────────────── */
-.page{display:none}
-.page.active{display:block;}
+/* ── PAGE ───────────────────── */
+.page {
+  position: absolute;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+.page.active {
+  position: relative;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
 /* @keyframes fadeIn 전체 삭제 */
 .page-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
 .page-title{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;color:var(--text)}
