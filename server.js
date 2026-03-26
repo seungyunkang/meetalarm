@@ -3,10 +3,6 @@
  * - PostgreSQL 기반 (Render 무료 DB 사용)
  * - 회사별 데이터 완전 격리 (Multi-tenant)
  */
-// 서버가 잘 살아있는지 확인하는 단순 API
-app.get('/ping', (req, res) => {
-  res.status(200).send('pong');
-});
 
 const http = require('http');
 const WebSocket = require('ws');
