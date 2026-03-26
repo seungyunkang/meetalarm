@@ -720,27 +720,27 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
      <div class="page" id="page-archive">
         <div class="page-header">
           <div>
-            <div class="page-title">🗄️ 아카이브</div>
-            <div class="page-sub">회의록이 있는 삭제된 미팅이 보관됩니다</div>
+            <div class="page-title" data-i18n="archive_title">🗄️ 아카이브</div>
+            <div class="page-sub" data-i18n="archive_desc">회의록이 있는 삭제된 미팅이 보관됩니다</div>
           </div>
         </div>
         <div id="archive-list"></div>
         <div style="height:28px"></div>
       </div>
 
-      <div class="page" id="page-switch-group">
+    <div class="page" id="page-switch-group">
         <div class="page-header">
           <div>
-            <div class="page-title">🏢 회사(그룹) 전환</div>
-            <div class="page-sub">등록된 여러 회사/그룹을 원클릭으로 이동합니다.</div>
+            <div class="page-title" data-i18n="sg_title">🏢 회사(그룹) 전환</div>
+            <div class="page-sub" data-i18n="sg_desc">등록된 여러 회사/그룹을 원클릭으로 이동합니다.</div>
           </div>
         </div>
         
-        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px;">✅ 등록된 회사(그룹) 목록</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px;" data-i18n="sg_list">✅ 등록된 회사(그룹) 목록</div>
         <div id="saved-groups-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;"></div>
 
         <div class="form-card">
-          <div class="form-card-title">➕ 새 회사(그룹) 연결하기</div>
+          <div class="form-card-title" data-i18n="sg_add">➕ 새 회사(그룹) 연결하기</div>
           <div class="form-row-2">
             <div><label class="form-label">초대 코드 *</label><input class="form-input" id="sg-code" placeholder="예: AB1C23" /></div>
             <div><label class="form-label">정확한 회사명 *</label><input class="form-input" id="sg-co-name" placeholder="가입된 회사명" /></div>
@@ -749,7 +749,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
             <div><label class="form-label">본인 이름 *</label><input class="form-input" id="sg-name" placeholder="가입된 이름" /></div>
             <div><label class="form-label">비밀번호 *</label><input class="form-input" type="password" id="sg-pw" placeholder="해당 그룹의 비밀번호" onkeydown="if(event.key==='Enter')verifyAndAddGroup()" /></div>
           </div>
-          <button class="btn btn-primary btn-full" style="margin-bottom:6px;" onclick="verifyAndAddGroup()">검증 및 내 목록에 추가</button>
+          <button class="btn btn-primary btn-full" style="margin-bottom:6px;" onclick="verifyAndAddGroup()" data-i18n="sg_btn">검증 및 내 목록에 추가</button>
         </div>
 
         <div style="height:28px"></div>
@@ -1034,27 +1034,47 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 // ═══════════════════════════════════════════════
 // I18N (다국어)
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// I18N (다국어) - 총 6개국어 완벽 지원 매트릭스 (설명문 포함 풀버전)
+// ═══════════════════════════════════════════════
 const I18N = {
   ko: {
-    nav_dash:"대시보드", nav_create:"미팅 등록", nav_recurring:"정기 미팅 관리", nav_schedules:"개인 및 팀 일정", nav_members:"구성원 관리", nav_settings:"연동 설정", nav_today:"오늘 내 일정", nav_switch_group:"회사(그룹) 전환", btn_logout:"🚪 로그아웃", btn_save:"저장", btn_close:"닫기", btn_cancel:"취소", btn_ok:"확인", c_title:"미팅 제목 *", c_date:"날짜 *", c_time:"시간 *", c_loc:"장소 *", c_agenda:"미팅 안건", c_att:"참석자 지정", btn_submit:"미팅 등록하기", filter_mine:"내 미팅만", filter_all:"전체 보기", view_cal:"캘린더 보기", stat_total:"전체 미팅", stat_up:"예정 미팅", stat_live:"진행중 미팅", stat_today:"오늘 미팅", stat_wait:"대기 알람", conn_wait:"연결 중...", tab_login:"로그인", tab_register:"회원가입"
+    sys_desc:"미팅 알람 시스템", nav_dash:"대시보드", nav_create:"미팅 등록", nav_recurring:"정기 미팅 관리", nav_schedules:"개인 및 팀 일정", nav_members:"구성원 관리", nav_settings:"연동 설정", nav_today:"오늘 내 일정", nav_switch_group:"회사(그룹) 전환", btn_logout:"🚪 로그아웃", btn_save:"저장", btn_close:"닫기", btn_cancel:"취소", btn_ok:"확인", 
+    create_desc:"새 미팅을 등록하고 참석자에게 알람을 발송합니다", rec_desc:"정기적인 회의 템플릿을 만들고 관리하세요.", sch_desc:"자유롭게 일정을 메모하고 공유하세요.", mem_desc:"부서 및 직원을 관리합니다", set_desc:"슬랙 연동을 설정합니다",
+    c_info:"기본 정보", c_alarm:"알람 설정", c_title:"미팅 제목 *", c_date:"날짜 *", c_time:"시간 *", c_loc:"장소 *", c_agenda:"미팅 안건", c_att:"참석자 지정", btn_submit:"미팅 등록하기", filter_mine:"내 미팅만", filter_all:"전체 보기", view_cal:"캘린더 보기", stat_total:"전체 미팅", stat_up:"예정 미팅", stat_live:"진행중 미팅", stat_today:"오늘 미팅", stat_wait:"대기 알람", conn_wait:"연결 중...", tab_login:"로그인", tab_register:"회원가입",
+    archive_title:"🗄️ 아카이브", archive_desc:"회의록이 있는 삭제된 미팅이 보관됩니다", sg_title:"🏢 회사(그룹) 전환", sg_desc:"등록된 여러 회사/그룹을 원클릭으로 이동합니다.", sg_list:"✅ 등록된 회사(그룹) 목록", sg_add:"➕ 새 회사(그룹) 연결하기", sg_btn:"검증 및 내 목록에 추가"
   },
   en: {
-    nav_dash:"Dashboard", nav_create:"Schedule Meeting", nav_recurring:"Recurring Meetings", nav_schedules:"Schedules", nav_members:"Members", nav_settings:"Settings", nav_today:"Today", nav_switch_group:"Switch Company", btn_logout:"🚪 Logout", btn_save:"Save", btn_close:"Close", btn_cancel:"Cancel", btn_ok:"OK", c_title:"Title *", c_date:"Date *", c_time:"Time *", c_loc:"Location *", c_agenda:"Agenda", c_att:"Attendees", btn_submit:"Submit", filter_mine:"My Meetings", filter_all:"All Meetings", view_cal:"Calendar", stat_total:"Total", stat_up:"Upcoming", stat_live:"Live", stat_today:"Today", stat_wait:"Pending", conn_wait:"Connecting...", tab_login:"Login", tab_register:"Register"
+    sys_desc:"Meeting Alarm System", nav_dash:"Dashboard", nav_create:"Schedule Meeting", nav_recurring:"Recurring Meetings", nav_schedules:"Schedules", nav_members:"Members", nav_settings:"Settings", nav_today:"Today", nav_switch_group:"Switch Company", btn_logout:"🚪 Logout", btn_save:"Save", btn_close:"Close", btn_cancel:"Cancel", btn_ok:"OK", 
+    create_desc:"Schedule new meetings & notify attendees", rec_desc:"Create and manage recurring meeting templates.", sch_desc:"Free memo schedules. Click date for details.", mem_desc:"Manage Depts & Staff", set_desc:"Slack Integration",
+    c_info:"Basic Info", c_alarm:"Alarm Setup", c_title:"Title *", c_date:"Date *", c_time:"Time *", c_loc:"Location *", c_agenda:"Agenda", c_att:"Attendees", btn_submit:"Submit", filter_mine:"My Meetings", filter_all:"All Meetings", view_cal:"Calendar", stat_total:"Total", stat_up:"Upcoming", stat_live:"Live", stat_today:"Today", stat_wait:"Pending", conn_wait:"Connecting...", tab_login:"Login", tab_register:"Register",
+    archive_title:"🗄️ Archive", archive_desc:"Deleted meetings with minutes are stored here.", sg_title:"🏢 Switch Company", sg_desc:"Switch between registered companies with one click.", sg_list:"✅ Registered Companies", sg_add:"➕ Add New Company", sg_btn:"Verify & Add to My List"
   },
   vi: {
-    nav_dash:"Bảng điều khiển", nav_create:"Tạo cuộc họp", nav_recurring:"Họp định kỳ", nav_schedules:"Lịch trình", nav_members:"Thành viên", nav_settings:"Cài đặt", nav_today:"Hôm nay", nav_switch_group:"Chuyển công ty", btn_logout:"🚪 Đăng xuất", btn_save:"Lưu", btn_close:"Đóng", btn_cancel:"Hủy", btn_ok:"OK", c_title:"Tiêu đề *", c_date:"Ngày *", c_time:"Giờ *", c_loc:"Địa điểm *", c_agenda:"Nội dung", c_att:"Người tham gia", btn_submit:"Đăng ký", filter_mine:"Của tôi", filter_all:"Tất cả", view_cal:"Lịch", stat_total:"Tổng", stat_up:"Sắp tới", stat_live:"Đang diễn ra", stat_today:"Hôm nay", stat_wait:"Đang chờ", conn_wait:"Đang kết nối...", tab_login:"Đăng nhập", tab_register:"Đăng ký"
+    sys_desc:"Hệ thống Báo động Cuộc họp", nav_dash:"Bảng điều khiển", nav_create:"Tạo cuộc họp", nav_recurring:"Họp định kỳ", nav_schedules:"Lịch trình", nav_members:"Thành viên", nav_settings:"Cài đặt", nav_today:"Hôm nay", nav_switch_group:"Chuyển công ty", btn_logout:"🚪 Đăng xuất", btn_save:"Lưu", btn_close:"Đóng", btn_cancel:"Hủy", btn_ok:"OK", 
+    create_desc:"Tạo cuộc họp mới & thông báo", rec_desc:"Tạo và quản lý mẫu cuộc họp định kỳ.", sch_desc:"Ghi chú lịch trình tự do.", mem_desc:"Quản lý phòng ban & NV", set_desc:"Tích hợp Slack",
+    c_info:"Thông tin cơ bản", c_alarm:"Cài đặt báo thức", c_title:"Tiêu đề *", c_date:"Ngày *", c_time:"Giờ *", c_loc:"Địa điểm *", c_agenda:"Nội dung", c_att:"Người tham gia", btn_submit:"Đăng ký", filter_mine:"Của tôi", filter_all:"Tất cả", view_cal:"Lịch", stat_total:"Tổng", stat_up:"Sắp tới", stat_live:"Đang diễn ra", stat_today:"Hôm nay", stat_wait:"Đang chờ", conn_wait:"Đang kết nối...", tab_login:"Đăng nhập", tab_register:"Đăng ký",
+    archive_title:"🗄️ Lưu trữ (Archive)", archive_desc:"Các cuộc họp đã xóa có biên bản được lưu trữ ở đây.", sg_title:"🏢 Chuyển công ty", sg_desc:"Chuyển đổi giữa các công ty đã đăng ký bằng một cú nhấp chuột.", sg_list:"✅ Các công ty đã đăng ký", sg_add:"➕ Thêm công ty mới", sg_btn:"Xác minh & Thêm"
   },
   zh: {
-    nav_dash:"仪表板", nav_create:"安排会议", nav_recurring:"定期会议", nav_schedules:"日程安排", nav_members:"成员管理", nav_settings:"设置", nav_today:"今天日程", nav_switch_group:"切换公司", btn_logout:"🚪 登出", btn_save:"保存", btn_close:"关闭", btn_cancel:"取消", btn_ok:"确定", c_title:"会议标题 *", c_date:"日期 *", c_time:"时间 *", c_loc:"地点 *", c_agenda:"议程", c_att:"参会者", btn_submit:"提交会议", filter_mine:"我的会议", filter_all:"所有会议", view_cal:"日历视图", stat_total:"总会议", stat_up:"即将举行", stat_live:"进行中", stat_today:"今日", stat_wait:"待办警报", conn_wait:"连接中...", tab_login:"登录", tab_register:"注册"
+    sys_desc:"会议警报系统", nav_dash:"仪表板", nav_create:"安排会议", nav_recurring:"定期会议", nav_schedules:"日程安排", nav_members:"成员管理", nav_settings:"设置", nav_today:"今天日程", nav_switch_group:"切换公司", btn_logout:"🚪 登出", btn_save:"保存", btn_close:"关闭", btn_cancel:"取消", btn_ok:"确定", 
+    create_desc:"安排新会议并通知与会者", rec_desc:"创建和管理定期会议模板。", sch_desc:"免费备忘录日程。点击日期查看详情。", mem_desc:"管理部门和员工", set_desc:"Slack 集成",
+    c_info:"基本信息", c_alarm:"警报设置", c_title:"会议标题 *", c_date:"日期 *", c_time:"时间 *", c_loc:"地点 *", c_agenda:"议程", c_att:"参会者", btn_submit:"提交会议", filter_mine:"我的会议", filter_all:"所有会议", view_cal:"日历视图", stat_total:"总会议", stat_up:"即将举行", stat_live:"进行中", stat_today:"今日", stat_wait:"待办警报", conn_wait:"连接中...", tab_login:"登录", tab_register:"注册",
+    archive_title:"🗄️ 归档", archive_desc:"带有会议纪要的已删除会议将存储在此处", sg_title:"🏢 切换公司", sg_desc:"一键在注册公司之间切换。", sg_list:"✅ 已注册公司", sg_add:"➕ 添加新公司", sg_btn:"验证并添加到我的列表"
   },
   hi: {
-    nav_dash:"डैशबोर्ड", nav_create:"मीटिंग तय करें", nav_recurring:"नियमित मीटिंग", nav_schedules:"कार्यक्रम", nav_members:"सदस्य", nav_settings:"सेटिंग्स", nav_today:"आज", nav_switch_group:"कंपनी बदलें", btn_logout:"🚪 लॉग आउट", btn_save:"सहेजें", btn_close:"बंद करें", btn_cancel:"रद्द करें", btn_ok:"ठीक है", c_title:"शीर्षक *", c_date:"दिनांक *", c_time:"समय *", c_loc:"स्थान *", c_agenda:"एजेंडा", c_att:"उपस्थित लोग", btn_submit:"जमा करें", filter_mine:"मेरी मीटिंग", filter_all:"सभी", view_cal:"कैलेंडर", stat_total:"कुल", stat_up:"आगामी", stat_live:"लाइव", stat_today:"आज", stat_wait:"लंबित", conn_wait:"जुड़ रहा है...", tab_login:"लॉग इन", tab_register:"पंजीकरण"
+    sys_desc:"मीटिंग अलार्म सिस्टम", nav_dash:"डैशबोर्ड", nav_create:"मीटिंग तय करें", nav_recurring:"नियमित मीटिंग", nav_schedules:"कार्यक्रम", nav_members:"सदस्य", nav_settings:"सेटिंग्स", nav_today:"आज", nav_switch_group:"कंपनी बदलें", btn_logout:"🚪 लॉग आउट", btn_save:"सहेजें", btn_close:"बंद करें", btn_cancel:"रद्द करें", btn_ok:"ठीक है", 
+    create_desc:"नई मीटिंग शेड्यूल करें", rec_desc:"आवर्ती मीटिंग टेम्पलेट बनाएं।", sch_desc:"निःशुल्क मेमो अनुसूची।", mem_desc:"विभाग और कर्मचारी प्रबंधित करें", set_desc:"स्लैक एकीकरण",
+    c_info:"बुनियादी जानकारी", c_alarm:"अलार्म सेटिंग्स", c_title:"शीर्षक *", c_date:"दिनांक *", c_time:"समय *", c_loc:"स्थान *", c_agenda:"एजेंडा", c_att:"उपस्थित लोग", btn_submit:"जमा करें", filter_mine:"मेरी मीटिंग", filter_all:"सभी", view_cal:"कैलेंडर", stat_total:"कुल", stat_up:"आगामी", stat_live:"लाइव", stat_today:"आज", stat_wait:"लंबित", conn_wait:"जुड़ रहा है...", tab_login:"लॉग इन", tab_register:"पंजीकरण",
+    archive_title:"🗄️ पुरालेख", archive_desc:"कार्यवृत्त वाली हटाई गई बैठकें यहाँ संग्रहीत हैं", sg_title:"🏢 कंपनी बदलें", sg_desc:"पंजीकृत कंपनियों间的 स्विच करें।", sg_list:"✅ पंजीकृत कंपनियाँ", sg_add:"➕ नई कंपनी जोड़ें", sg_btn:"सत्यापित करें और जोड़ें"
   },
   es: {
-    nav_dash:"Panel", nav_create:"Programar Reunión", nav_recurring:"Reuniones Recurrentes", nav_schedules:"Horarios", nav_members:"Miembros", nav_settings:"Ajustes", nav_today:"Hoy", nav_switch_group:"Cambiar Empresa", btn_logout:"🚪 Cerrar sesión", btn_save:"Guardar", btn_close:"Cerrar", btn_cancel:"Cancelar", btn_ok:"Aceptar", c_title:"Título *", c_date:"Fecha *", c_time:"Hora *", c_loc:"Ubicación *", c_agenda:"Agenda", c_att:"Asistentes", btn_submit:"Enviar", filter_mine:"Mis reuniones", filter_all:"Todas", view_cal:"Calendario", stat_total:"Total", stat_up:"Próximas", stat_live:"En vivo", stat_today:"Hoy", stat_wait:"Pendiente", conn_wait:"Conectando...", tab_login:"Iniciar sesión", tab_register:"Registrarse"
+    sys_desc:"Sistema de alarma", nav_dash:"Panel", nav_create:"Programar Reunión", nav_recurring:"Reuniones Recurrentes", nav_schedules:"Horarios", nav_members:"Miembros", nav_settings:"Ajustes", nav_today:"Hoy", nav_switch_group:"Cambiar Empresa", btn_logout:"🚪 Cerrar sesión", btn_save:"Guardar", btn_close:"Cerrar", btn_cancel:"Cancelar", btn_ok:"Aceptar", 
+    create_desc:"Programar nuevas reuniones y notificar", rec_desc:"Crear y administrar plantillas recurrentes.", sch_desc:"Horarios de notas libres.", mem_desc:"Administrar departamentos", set_desc:"Integración de Slack",
+    c_info:"Información básica", c_alarm:"Ajustes de alarma", c_title:"Título *", c_date:"Fecha *", c_time:"Hora *", c_loc:"Ubicación *", c_agenda:"Agenda", c_att:"Asistentes", btn_submit:"Enviar", filter_mine:"Mis reuniones", filter_all:"Todas", view_cal:"Calendario", stat_total:"Total", stat_up:"Próximas", stat_live:"En vivo", stat_today:"Hoy", stat_wait:"Pendiente", conn_wait:"Conectando...", tab_login:"Iniciar sesión", tab_register:"Registrarse",
+    archive_title:"🗄️ Archivo", archive_desc:"Las reuniones eliminadas con actas se almacenan aquí.", sg_title:"🏢 Cambiar de empresa", sg_desc:"Cambie entre empresas registradas con un clic.", sg_list:"✅ Empresas registradas", sg_add:"➕ Agregar nueva empresa", sg_btn:"Verificar y agregar a mi lista"
   }
 };
-
 const SUPPORTED_LANGS = ['en', 'ko', 'vi', 'zh', 'hi', 'es'];
 let g_lang = localStorage.getItem('ma_lang') || 'ko';
 
