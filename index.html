@@ -534,8 +534,8 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
         <div class="nav-icon" style="background:transparent;">⭐</div><span data-i18n="nav_today">오늘 내 일정</span>
       </button>
       
-      <button class="nav-btn" id="nav-switch-group" onclick="goto('switch-group')" style="margin-top:8px;">
-        <div class="nav-icon">🏢</div><span>회사(그룹) 전환</span>
+   <button class="nav-btn" id="nav-switch-group" onclick="goto('switch-group')" style="margin-top:8px;">
+        <div class="nav-icon">🏢</div><span data-i18n="nav_switch_group">회사(그룹) 전환</span>
       </button>
     </div>
     <div id="conn-status-bar" class="conn-status offline" style="margin-top:auto">
@@ -989,9 +989,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <span>오늘</span>
     </button>
     
-  <button class="mobile-tab" id="mtab-switch-group" onclick="goto('switch-group')">
+<button class="mobile-tab" id="mtab-switch-group" onclick="goto('switch-group')">
       <span class="mobile-tab-icon">🏢🏢</span>
-      <span>회사변경</span>
+      <span data-i18n="nav_switch_group">회사변경</span>
     </button>
     
     <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
@@ -1019,9 +1019,9 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     </button>
 
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="openLangModal();toggleMobileMore()">
-      <span class="mobile-tab-icon">🌐</span><span data-i18n="nav_settings">언어 설정</span>
+      <span class="mobile-tab-icon">🌐</span><span>언어(Lang)</span>
     </button>
-    </button>    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
       <span class="mobile-tab-icon">🌙</span><span>테마</span>
     </button>
     <button class="mobile-tab" style="background:var(--red-bg);border-radius:12px;padding:12px 8px;color:var(--red)" onclick="doLogout()">
