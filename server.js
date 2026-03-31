@@ -7,9 +7,12 @@
 
 require('dns').setDefaultResultOrder('ipv4first'); // ★ 노드 엔진에 IPv4 강제 지시
 
+// 1. 노드 엔진 자체에 IPv4 주소를 가장 먼저 찾도록 쐐기를 박습니다.
+require('dns').setDefaultResultOrder('ipv4first'); 
+
 const http = require('http');
 const WebSocket = require('ws');
-const { Pool } = require('pg');const bcrypt = require('bcrypt');
+// ...const { Pool } = require('pg');const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3000;
