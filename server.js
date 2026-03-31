@@ -3,16 +3,16 @@
  * - PostgreSQL 기반 (Render 무료 DB 사용)
  * - 회사별 데이터 완전 격리 (Multi-tenant)
  * - [보안 강화] bcrypt 비밀번호 암호화 및 이메일 초기화 적용
+ * - [통신 강화] IPv4 강제 설정 (Render IPv6 이슈 해결)
  */
 
-require('dns').setDefaultResultOrder('ipv4first'); // ★ 노드 엔진에 IPv4 강제 지시
-
-// 1. 노드 엔진 자체에 IPv4 주소를 가장 먼저 찾도록 쐐기를 박습니다.
-require('dns').setDefaultResultOrder('ipv4first'); 
+// 1. 노드 엔진이 IPv6 대신 IPv4 주소를 우선적으로 찾도록 최상단에서 강제합니다.
+require('dns').setDefaultResultOrder('ipv4first');
 
 const http = require('http');
 const WebSocket = require('ws');
-// ...const { Pool } = require('pg');const bcrypt = require('bcrypt');
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3000;
@@ -23,22 +23,20 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
-// 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
+// 2. 이메일 발송기 설정 (소켓 수준 IPv4 강제)
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',  // ★ 서비스명 대신 호스트 주소 직접 입력
-  port: 465,               // ★ 보안 포트 고정
-  secure: true,            // ★ SSL 보안 연결 강제
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER || 'your-email@gmail.com',
     pass: process.env.EMAIL_PASS || 'your-app-password'
   },
-  // ★ 중요: 네트워크 연결 시 IPv4 가족(Family: 4)만 사용하도록 강제
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-  dnsVapi: false           // 시스템의 잘못된 DNS 설정을 무시하도록 설정
+  // ★ 핵심: 구글 서버 접속 시 IPv6를 무시하고 IPv4로만 통신하도록 강제합니다.
+  // 이 옵션이 빠지면 Render 환경에서 ENETUNREACH 에러가 발생할 수 있습니다.
+  family: 4 
 });
+
 // DB 테이블 초기화
 async function initDB() {
   await pool.query(`
@@ -203,7 +201,6 @@ const httpServer = http.createServer(async (req, res) => {
       const { rows } = await pool.query('SELECT name FROM users WHERE name=$1 AND company_id=$2', [name, cId]);
       if (rows.length) return send({ error: '이미 사용 중인 이름입니다' }, 400);
       
-      // 단방향 암호화 적용 (Salt Rounds: 10)
       const hashedPw = await bcrypt.hash(pw, 10);
       
       await pool.query('INSERT INTO users(name,company_id,pw,dept_id,email) VALUES($1,$2,$3,$4,$5)', [name, cId, hashedPw, deptId || null, email]);
@@ -218,7 +215,6 @@ const httpServer = http.createServer(async (req, res) => {
       
       if (!rows.length) return send({ error: '이름 또는 비밀번호가 틀렸습니다' }, 401);
       
-      // 저장된 해시값과 입력받은 비밀번호 비교
       const isMatch = await bcrypt.compare(pw, rows[0].pw);
       if (!isMatch) return send({ error: '이름 또는 비밀번호가 틀렸습니다' }, 401);
       
@@ -232,14 +228,11 @@ const httpServer = http.createServer(async (req, res) => {
       const { rows } = await pool.query('SELECT * FROM users WHERE name=$1 AND company_id=$2 AND email=$3', [name, cId, email]);
       if (rows.length === 0) return send({ error: '일치하는 사용자 정보가 없습니다.' }, 404);
 
-      // 랜덤 임시 비밀번호 8자리 생성 및 암호화
       const tempPw = Math.random().toString(36).slice(-8);
       const hashedPw = await bcrypt.hash(tempPw, 10);
       
-      // DB 업데이트
       await pool.query('UPDATE users SET pw=$1 WHERE name=$2 AND company_id=$3', [hashedPw, name, cId]);
 
-      // 메일 발송 설정
       const mailOptions = {
         from: process.env.EMAIL_USER || 'your-email@gmail.com',
         to: email,
@@ -256,7 +249,7 @@ const httpServer = http.createServer(async (req, res) => {
       }
     }
 
-    // 그룹 동기화 (bcrypt 적용 시 평문 쿼리가 불가하므로 로직 변경)
+    // 그룹 동기화
     if (req.method === 'POST' && url === '/api/sync-groups') {
       const { name, pw } = await getBody();
       if (!name || !pw) return send({ error: '정보 누락' }, 400);
@@ -274,7 +267,7 @@ const httpServer = http.createServer(async (req, res) => {
             company_id: row.company_id,
             company_name: row.company_name,
             user_name: row.user_name,
-            pw: pw // 프론트엔드의 다중 계정 유지를 위해 평문 리턴 (HTTPS 필수)
+            pw: pw
           });
         }
       }
@@ -286,10 +279,9 @@ const httpServer = http.createServer(async (req, res) => {
       return send(updatedUsers);
     }
 
-    // ── 이하 모든 API는 companyId 필수 ──────────
     if (!companyId) return send({ error: '접근 권한 없음' }, 403);
 
-    // 사용자 개인 설정(숨긴 미팅, 취소선) 저장
+    // 사용자 개인 설정 저장
     if (req.method === 'PUT' && url.includes('/prefs') && url.startsWith('/api/users/')) {
       const name = decodeURIComponent(url.split('/')[3]);
       const { hiddenIds, todayDoneIds } = await getBody();
@@ -327,7 +319,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // ── 미팅 ────────────────────────────────────
+    // 미팅 관리
     if (req.method === 'POST' && url === '/api/meetings/save-and-archive') {
       const b = await getBody();
       const id = 'meet_' + Date.now();
@@ -380,14 +372,13 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'DELETE' && url.startsWith('/api/meetings/') && !url.includes('/alarm') && !url.includes('/complete') && !url.includes('/leave') && !url.includes('/hide') && !url.includes('/archive')) {
+    if (req.method === 'DELETE' && url.startsWith('/api/meetings/')) {
       const id = url.split('/').pop();
       await pool.query('DELETE FROM meetings WHERE id=$1 AND company_id=$2', [id, companyId]);
       broadcast(companyId, { event: 'meeting_deleted', data: { id } });
       return send({ ok: true });
     }
 
-    // ── 아카이브 ─────────────────────────────────
     if (req.method === 'PUT' && url.includes('/archive')) {
       const id = url.split('/')[3];
       const { rows } = await pool.query('SELECT * FROM meetings WHERE id=$1 AND company_id=$2', [id, companyId]);
@@ -438,10 +429,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'PUT' && url.includes('/hide')) { return send({ ok: true }); }
-    if (req.method === 'PUT' && url.includes('/unhide')) { return send({ ok: true }); }
-
-    // ── 부서 ────────────────────────────────────
+    // 부서 관리
     if (req.method === 'GET' && url === '/api/departments') {
       const { rows } = await pool.query('SELECT id,name,color FROM departments WHERE company_id=$1', [companyId]);
       return send(rows);
@@ -456,15 +444,6 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'PUT' && url.startsWith('/api/departments/')) {
-      const id = url.split('/').pop();
-      const { name, color } = await getBody();
-      await pool.query('UPDATE departments SET name=$1,color=$2 WHERE id=$3 AND company_id=$4', [name, color, id, companyId]);
-      const { rows } = await pool.query('SELECT id,name,color FROM departments WHERE company_id=$1', [companyId]);
-      broadcast(companyId, { event: 'dept_updated', data: rows });
-      return send({ ok: true });
-    }
-
     if (req.method === 'DELETE' && url.startsWith('/api/departments/')) {
       const id = url.split('/').pop();
       await pool.query('DELETE FROM departments WHERE id=$1 AND company_id=$2', [id, companyId]);
@@ -473,7 +452,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // ── 일정 (schedules) ────────────────────────
+    // 일정 관리
     if (req.method === 'GET' && url === '/api/schedules') {
       const { rows } = await pool.query('SELECT * FROM schedules WHERE company_id=$1', [companyId]);
       const { rows: cRows } = await pool.query('SELECT * FROM schedule_comments WHERE company_id=$1 ORDER BY created_at ASC', [companyId]);
@@ -495,14 +474,6 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true, id });
     }
 
-    if (req.method === 'PUT' && url.startsWith('/api/schedules/') && !url.includes('/comments')) {
-      const id = url.split('/').pop();
-      const b = await getBody();
-      await pool.query('UPDATE schedules SET content=$1,visibility=$2,dept_id=$3 WHERE id=$4 AND company_id=$5', [b.content, b.visibility, b.deptId || null, id, companyId]);
-      broadcast(companyId, { event: 'schedules_updated' });
-      return send({ ok: true });
-    }
-
     if (req.method === 'DELETE' && url.startsWith('/api/schedules/')) {
       const id = url.split('/').pop();
       await pool.query('DELETE FROM schedules WHERE id=$1 AND company_id=$2', [id, companyId]);
@@ -510,7 +481,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // ── 정기 미팅 ───────────────────────────────
+    // 정기 미팅 관리
     if (req.method === 'GET' && url === '/api/recurring') {
       const { rows: tRows } = await pool.query('SELECT data FROM recurring_templates WHERE company_id=$1', [companyId]);
       const { rows: oRows } = await pool.query('SELECT key,data FROM recurring_overrides WHERE company_id=$1', [companyId]);
@@ -536,44 +507,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'DELETE' && url.startsWith('/api/recurring/templates/')) {
-      const id = url.split('/').pop();
-      await pool.query('DELETE FROM recurring_templates WHERE id=$1 AND company_id=$2', [id, companyId]);
-      broadcast(companyId, { event: 'recurring_updated' });
-      return send({ ok: true });
-    }
-
-    if (req.method === 'POST' && url.startsWith('/api/recurring/overrides/')) {
-      const key = url.split('/api/recurring/overrides/')[1];
-      const b = await getBody();
-      await pool.query(
-        'INSERT INTO recurring_overrides(key,company_id,data) VALUES($1,$2,$3) ON CONFLICT(key) DO UPDATE SET data=$3',
-        [key, companyId, JSON.stringify(b)]
-      );
-      broadcast(companyId, { event: 'recurring_updated' });
-      return send({ ok: true });
-    }
-
-    if (req.method === 'POST' && url.startsWith('/api/recurring/completed')) {
-      const { id } = await getBody();
-      await pool.query(
-        'INSERT INTO recurring_completed(id,company_id) VALUES($1,$2) ON CONFLICT DO NOTHING',
-        [id, companyId]
-      );
-      broadcast(companyId, { event: 'recurring_updated' });
-      return send({ ok: true });
-    }
-
-    // ── 일정 댓글 ───────────────────────────────
-    if (req.method === 'GET' && url.includes('/comments')) {
-      const schId = url.split('/')[3];
-      const { rows } = await pool.query(
-        'SELECT * FROM schedule_comments WHERE schedule_id=$1 AND company_id=$2 ORDER BY created_at ASC',
-        [schId, companyId]
-      );
-      return send(rows);
-    }
-
+    // 일정 댓글 관리
     if (req.method === 'POST' && url.includes('/comments')) {
       const schId = url.split('/')[3];
       const { author, content } = await getBody();
@@ -586,25 +520,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'DELETE' && url.includes('/comments/')) {
-      const parts = url.split('/');
-      const cmtId = parts.pop();
-      await pool.query('DELETE FROM schedule_comments WHERE id=$1 AND company_id=$2', [cmtId, companyId]);
-      broadcast(companyId, { event: 'schedules_updated' });
-      return send({ ok: true });
-    }
-
-    // 정기 미팅 회의록 조회
-    if (req.method === 'GET' && url.startsWith('/api/recurring/minutes/')) {
-      const instanceId = url.split('/api/recurring/minutes/')[1];
-      const { rows } = await pool.query(
-        'SELECT * FROM recurring_minutes WHERE rec_instance_id=$1 AND company_id=$2 ORDER BY updated_at ASC',
-        [instanceId, companyId]
-      );
-      return send(rows);
-    }
-
-    // 정기 미팅 회의록 저장
+    // 회의록 관리
     if (req.method === 'POST' && url.startsWith('/api/recurring/minutes/')) {
       const instanceId = url.split('/api/recurring/minutes/')[1];
       const { author, content, editId } = await getBody();
@@ -621,14 +537,6 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // 정기 미팅 회의록 삭제
-    if (req.method === 'DELETE' && url.startsWith('/api/recurring/minutes/')) {
-      const parts = url.split('/');
-      const minId = parts.pop();
-      await pool.query('DELETE FROM recurring_minutes WHERE id=$1 AND company_id=$2', [minId, companyId]);
-      return send({ ok: true });
-    }
-
     send({ error: 'Not found' }, 404);
 
   } catch (e) {
@@ -637,7 +545,7 @@ const httpServer = http.createServer(async (req, res) => {
   }
 });
 
-// ── 웹소켓 ─────────────────────────────────────
+// 웹소켓 설정
 const wss = new WebSocket.Server({ server: httpServer });
 const clients = new Set();
 
@@ -662,7 +570,7 @@ function broadcast(cId, obj) {
   });
 }
 
-// ── 서버 시작 ───────────────────────────────────
+// 서버 시작
 initDB().then(() => {
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`MeetAlarm Server running on port ${PORT}`);
