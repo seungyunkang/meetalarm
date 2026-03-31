@@ -20,7 +20,7 @@
   --red: #dc2626;   --red-bg: #fee2e2;   --red-glow: rgba(220,38,38,.15);
   --purple: #9333ea;--purple-bg: #f3e8ff;
   --text: #111827; --text2: #4b5563; --text3: #6b7280;
-  --radius: 10px; --radius2: 14px; --tr: 0s;
+  --radius: 10px; --radius2: 14px; --tr: .18s cubic-bezier(.4,0,.2,1);
 }
 
 /* ── NIGHT MODE ── */
@@ -72,8 +72,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 
 /* ── PAGE ───────────────────── */
 .page{display:none}
-.page.active{display:block;}
-/* @keyframes fadeIn 전체 삭제 */
+.page.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .page-header{margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
 .page-title{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-bottom:4px;color:var(--text)}
 .page-sub{color:var(--text2);font-size:17px}
@@ -92,16 +92,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .cal-grid { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:var(--radius2); overflow:hidden; background:var(--bg2); box-shadow:0 2px 8px rgba(0,0,0,.03); }
 .cal-header-row { display:grid; grid-template-columns:repeat(7, 1fr); background:var(--bg3); border-bottom:1px solid var(--border); text-align:center; font-size:16px; font-weight:600; padding:10px 0; color:var(--text2); }
 .cal-body { display:grid; grid-template-columns:repeat(7, 1fr); grid-auto-rows:minmax(110px, auto); }
-/* ★ min-width:0; overflow:hidden; 추가됨 */
-.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px; display:flex; flex-direction:column; gap:4px; transition:background .2s; overflow:hidden; min-width:0; }
+.cal-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px; display:flex; flex-direction:column; gap:4px; transition:background .2s; }
 .cal-cell:hover { background:var(--bg3); }
 .cal-cell:nth-child(7n) { border-right:none; }
 .cal-cell.empty { background:var(--bg); }
 .cal-cell.today { background:var(--green-bg); box-shadow:inset 0 0 0 1px var(--green); position:relative; z-index:1; }
 .cal-date { font-size:17px; font-weight:700; margin-bottom:6px; padding-left:2px; color:var(--text2); }
 .cal-cell.today .cal-date { color:var(--green); }
-/* ★ overflow-x:hidden; 추가됨 */
-.cal-ev-list { display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; }.cal-ev-list::-webkit-scrollbar { display:none; }
+.cal-ev-list { display:flex; flex-direction:column; gap:4px; flex:1; overflow-y:auto; scrollbar-width:none; }
+.cal-ev-list::-webkit-scrollbar { display:none; }
 .cal-ev { font-size:15px; padding:4px 6px; border-radius:6px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
 .cal-ev:hover { filter:brightness(0.95); transform:translateX(2px); }
 .cal-ev.mine { background:var(--brand); color:#fff; font-weight:600; }
@@ -169,7 +168,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .form-row{margin-bottom:13px}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
 .form-label{font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
-.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-appearance:none; -webkit-user-select:auto; user-select:auto;}.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-size:16px;font-family:inherit;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.02); -webkit-user-select:text; user-select:text;}
+.form-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-glow)}
 .form-input::placeholder{color:var(--border3)}
 textarea.form-input{resize:vertical;min-height:76px}
 select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
@@ -234,10 +234,10 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 .auth-ok.show{display:block}
 
 /* ── OVERLAY / MODAL ─────────── */
-.overlay{position:fixed;inset:0;background:rgba(17,24,39,.75);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;}
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.75);display:flex;align-items:center;justify-content:center;z-index:8000;opacity:0;pointer-events:none;transition:opacity .2s}
 [data-theme="dark"] .overlay { background:rgba(0,0,0,.9); }
 .overlay.show{opacity:1;pointer-events:all}
-.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);}
+.modal{background:var(--bg2);border-radius:20px;padding:36px;max-width:430px;width:92%;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.15);transform:scale(.95) translateZ(0);transition:transform .2s ease-out; -webkit-transform:translateZ(0); will-change:transform, opacity}
 .modal.minutes-lg { max-width: 750px; width: 95%; } 
 .overlay.show .modal{transform:translateZ(0); transition:none;}
 .modal.mod-first{border-top:6px solid var(--brand)}
@@ -317,19 +317,19 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 /* ── 모바일 하단 탭바 ────────── */
 .mobile-tabbar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:8000;padding:6px 0 env(safe-area-inset-bottom,6px)}
 .mobile-tabbar-inner{display:flex;justify-content:space-around;align-items:center}
-.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;min-width:45px}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--text3);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;border-radius:10px;transition:all .15s;min-width:52px}
 .mobile-tab.active{color:var(--brand)}
 .mobile-tab-icon{font-size:20px;line-height:1}
 .mobile-tab-badge{position:absolute;top:-2px;right:-2px;background:var(--brand);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center}
 .mobile-tab-wrap{position:relative;display:inline-flex}
 
-
 /* ── 모바일 미디어쿼리 ────────── */
 @media (max-width: 768px) {
-  html,body{overflow:hidden;height:100%}
-  .app{flex-direction:column;height:100%}
+  html,body{overflow:auto}
+  .app{flex-direction:column}
   .sidebar{display:none !important}
-  .main{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:70px;-webkit-overflow-scrolling:touch;}  .content-area{padding:16px;height:auto;overflow:visible}
+  .main{flex:1;overflow:auto;padding-bottom:70px}
+  .content-area{padding:16px;height:auto;overflow:visible}
   .mobile-tabbar{display:block}
   .page-title{font-size:20px}
   .page-sub{font-size:13px}
@@ -353,29 +353,10 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
   .cal-body{grid-auto-rows:minmax(60px,auto)}
   .cal-cell{padding:2px;gap:1px}
   .cal-date{font-size:11px;margin-bottom:1px;padding-left:2px}
-  
-  /* 모바일 미디어쿼리 내부 - 미팅 2줄 표시 및 아바타 숨김 */
-  .cal-ev, .sch-ev {
-    font-size: 10px; padding: 4px; border-radius: 4px;
-    display: flex; align-items: flex-start; gap: 3px;
-    width: 100%; max-width: 100%; 
-    overflow: hidden; 
-  }
-  
-  /* 모바일에서 동그라미(이름/아바타) 숨기기 */
-  .cal-mob-hide { 
-    display: none !important; 
-  }
-  
-  /* 모바일에서 텍스트 최대 2줄까지만 허용하고 말줄임표(...) 처리 */
-  .cal-mob-text {
-    margin-left: 0 !important; /* 아바타가 사라졌으므로 왼쪽 여백 제거 */
-    white-space: normal !important; /* 1줄 고정 해제 */
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important; /* 최대 2줄 표시 */
-    -webkit-box-orient: vertical !important;
-    word-break: break-all;
-    line-height: 1.3;
+  .cal-ev, .sch-ev{
+    font-size:10px; padding:3px; border-radius:4px;
+    line-height:1.3; word-break:break-all;
+    display:flex; align-items:flex-start; gap:3px;
   }
   .cal-ev .ev-time{display:none}
   .cal-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
@@ -437,8 +418,8 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <div id="auth-screen" style="display:none">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="lm">🏢</div>
-      <h1 id="auth-co-name" style="word-break:keep-all;">MeetAlarm</h1>
+      <div class="lm">📅</div>
+      <h1>MeetAlarm</h1>
       <p data-i18n="sys_desc">미팅 알람 시스템</p>
     </div>
     <div class="auth-tabs">
@@ -460,26 +441,17 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3);font-weight:500">
         <span data-i18n="no_account">계정이 없으신가요?</span> <span style="color:var(--brand);cursor:pointer;font-weight:700" onclick="showAuthTab('register')" data-i18n="tab_register">회원가입</span>
       </div>
-      
-      <div style="text-align:center;margin-top:8px">
-        <span style="font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline;font-weight:500;" onclick="openResetPwModal()">비밀번호를 잊으셨나요?</span>
-      </div>
-
       <div style="text-align:right;margin-top:8px">
         <span style="font-size:11px;color:var(--text3);cursor:pointer;font-weight:500" onclick="changeCompany()">그룹 변경 (초대코드 재입력)</span>
       </div>
     </div>
 
- <div id="tab-reg" style="display:none">
+    <div id="tab-reg" style="display:none">
       <div class="auth-err" id="reg-err"></div>
       <div class="auth-ok" id="reg-ok"></div>
       <div class="form-row">
         <label class="form-label" data-i18n="label_name_req">이름 *</label>
         <input class="form-input" id="reg-name" placeholder="본인 이름" />
-      </div>
-      <div class="form-row">
-        <label class="form-label">이메일 * (비밀번호 찾기용)</label>
-        <input class="form-input" type="email" id="reg-email" placeholder="이메일 주소" />
       </div>
       <div class="form-row">
         <label class="form-label" data-i18n="label_dept_req">부서 *</label>
@@ -539,19 +511,15 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
         <div class="nav-icon">🗄️</div><span>아카이브</span>
       </button>
 
-     <button class="nav-btn" id="nav-today" onclick="openTodayModal()" style="margin-top:20px; border:1px solid var(--brand); color:var(--brand); background:var(--brand-glow);">
+      <button class="nav-btn" id="nav-today" onclick="openTodayModal()" style="margin-top:20px; border:1px solid var(--brand); color:var(--brand); background:var(--brand-glow);">
         <div class="nav-icon" style="background:transparent;">⭐</div><span data-i18n="nav_today">오늘 내 일정</span>
-      </button>
-      
-   <button class="nav-btn" id="nav-switch-group" onclick="goto('switch-group')" style="margin-top:8px;">
-        <div class="nav-icon">🏢</div><span data-i18n="nav_switch_group">회사(그룹) 전환</span>
       </button>
     </div>
     <div id="conn-status-bar" class="conn-status offline" style="margin-top:auto">
       <div class="conn-dot"></div><span id="conn-text" data-i18n="conn_wait">연결 중...</span>
     </div>
     <div class="sidebar-bottom">
-     <button class="logout-btn" id="lang-toggle-btn" onclick="openLangModal()" style="margin-bottom:8px">🌐 언어 설정 (Language)</button>
+      <button class="logout-btn" id="lang-toggle-btn" onclick="toggleLang()" style="margin-bottom:8px">🌐 English Mode</button>
       <button class="logout-btn" id="theme-toggle-btn" onclick="toggleTheme()" style="margin-bottom:8px">🌙 다크 모드</button>
       <button class="logout-btn" onclick="doLogout()" data-i18n="btn_logout">🚪 로그아웃</button>
     </div>
@@ -726,41 +694,14 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
         </div>
       </div>
 
-     <div class="page" id="page-archive">
+      <div class="page" id="page-archive">
         <div class="page-header">
           <div>
-            <div class="page-title" data-i18n="archive_title">🗄️ 아카이브</div>
-            <div class="page-sub" data-i18n="archive_desc">회의록이 있는 삭제된 미팅이 보관됩니다</div>
+            <div class="page-title">🗄️ 아카이브</div>
+            <div class="page-sub">회의록이 있는 삭제된 미팅이 보관됩니다</div>
           </div>
         </div>
         <div id="archive-list"></div>
-        <div style="height:28px"></div>
-      </div>
-
-    <div class="page" id="page-switch-group">
-        <div class="page-header">
-          <div>
-            <div class="page-title" data-i18n="sg_title">🏢 회사(그룹) 전환</div>
-            <div class="page-sub" data-i18n="sg_desc">등록된 여러 회사/그룹을 원클릭으로 이동합니다.</div>
-          </div>
-        </div>
-        
-        <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:12px;" data-i18n="sg_list">✅ 등록된 회사(그룹) 목록</div>
-        <div id="saved-groups-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;"></div>
-
-        <div class="form-card">
-          <div class="form-card-title" data-i18n="sg_add">➕ 새 회사(그룹) 연결하기</div>
-          <div class="form-row-2">
-            <div><label class="form-label">초대 코드 *</label><input class="form-input" id="sg-code" placeholder="예: AB1C23" /></div>
-            <div><label class="form-label">정확한 회사명 *</label><input class="form-input" id="sg-co-name" placeholder="가입된 회사명" /></div>
-          </div>
-          <div class="form-row-2">
-            <div><label class="form-label">본인 이름 *</label><input class="form-input" id="sg-name" placeholder="가입된 이름" /></div>
-            <div><label class="form-label">비밀번호 *</label><input class="form-input" type="password" id="sg-pw" placeholder="해당 그룹의 비밀번호" onkeydown="if(event.key==='Enter')verifyAndAddGroup()" /></div>
-          </div>
-          <button class="btn btn-primary btn-full" style="margin-bottom:6px;" onclick="verifyAndAddGroup()" data-i18n="sg_btn">검증 및 내 목록에 추가</button>
-        </div>
-
         <div style="height:28px"></div>
       </div>
 
@@ -960,42 +901,7 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 <div class="overlay" id="switch-modal" style="display:none"></div>
 <div class="toasts" id="toasts"></div>
 
-<div class="overlay" id="lang-modal-overlay">
-  <div class="modal" style="max-width:320px; text-align:center;">
-    <div style="font-size:18px;font-weight:700;margin-bottom:16px;color:var(--text)">언어 설정 (Language)</div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <button class="btn btn-ghost btn-full" onclick="setLang('ko')">🇰🇷 한국어 (Korean)</button>
-      <button class="btn btn-ghost btn-full" onclick="setLang('en')">🇺🇸 English (영어)</button>
-      <button class="btn btn-ghost btn-full" onclick="setLang('vi')">🇻🇳 Tiếng Việt (Vietnamese)</button>
-      <button class="btn btn-ghost btn-full" onclick="setLang('zh')">🇨🇳 中文 (Chinese)</button>
-      <button class="btn btn-ghost btn-full" onclick="setLang('hi')">🇮🇳 हिन्दी (Hindi)</button>
-      <button class="btn btn-ghost btn-full" onclick="setLang('es')">🇪🇸 Español (Spanish)</button>
-    </div>
-    <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="closeLangModal()">닫기 / Close</button>
-  </div>
-</div>
-
-<div class="overlay" id="reset-pw-overlay" style="z-index:10000;">
-  <div class="modal" style="max-width:350px; text-align:left;">
-    <div style="font-size:18px;font-weight:700;margin-bottom:16px;color:var(--text)">비밀번호 초기화</div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.5;">
-      가입 시 입력한 이름과 이메일을 입력하시면, 해당 이메일로 <b>임시 비밀번호</b>가 발송됩니다.
-    </div>
-    <div class="form-row">
-      <label class="form-label">이름</label>
-      <input class="form-input" id="reset-name-input" placeholder="가입된 이름" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">이메일</label>
-      <input class="form-input" type="email" id="reset-email-input" placeholder="등록한 이메일 주소" onkeydown="if(event.key==='Enter')requestPasswordReset()" />
-    </div>
-    <div style="display:flex;gap:8px;margin-top:20px">
-      <button class="btn btn-ghost" style="flex:1" onclick="closeResetPwModal()">취소</button>
-      <button class="btn btn-primary" style="flex:1" onclick="requestPasswordReset()" id="btn-reset-pw">임시번호 발급</button>
-    </div>
-  </div>
-</div>
-
+<!-- 모바일 하단 탭바 -->
 <div class="mobile-tabbar" id="mobile-tabbar">
   <div class="mobile-tabbar-inner">
     <button class="mobile-tab active" id="mtab-dashboard" onclick="goto('dashboard')">
@@ -1009,20 +915,14 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
       <span class="mobile-tab-icon">✏️</span>
       <span>등록</span>
     </button>
-   <button class="mobile-tab" id="mtab-schedules" onclick="goto('schedules')">
+    <button class="mobile-tab" id="mtab-schedules" onclick="goto('schedules')">
       <span class="mobile-tab-icon">🗓️</span>
       <span>일정</span>
-    </button>    
+    </button>
     <button class="mobile-tab" id="mtab-today" onclick="openTodayModal()">
       <span class="mobile-tab-icon">⭐</span>
       <span>오늘</span>
     </button>
-    
-<button class="mobile-tab" id="mtab-switch-group" onclick="goto('switch-group')">
-      <span class="mobile-tab-icon">🏢🏢</span>
-      <span data-i18n="nav_switch_group">회사변경</span>
-    </button>
-    
     <button class="mobile-tab" id="mtab-more" onclick="toggleMobileMore()">
       <span class="mobile-tab-icon">☰</span>
       <span>더보기</span>
@@ -1042,13 +942,8 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('archive')">
       <span class="mobile-tab-icon">🗄️</span><span>아카이브</span>
     </button>
-        
-    <button class="mobile-tab" id="mobile-nav-settings" style="display:none;background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="goto('settings');toggleMobileMore()">
-      <span class="mobile-tab-icon">⚙️</span><span>연동설정</span>
-    </button>
-
-    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="openLangModal();toggleMobileMore()">
-      <span class="mobile-tab-icon">🌐</span><span>언어(Lang)</span>
+    <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleLang();toggleMobileMore()">
+      <span class="mobile-tab-icon">🌐</span><span>언어</span>
     </button>
     <button class="mobile-tab" style="background:var(--bg3);border-radius:12px;padding:12px 8px" onclick="toggleTheme();toggleMobileMore()">
       <span class="mobile-tab-icon">🌙</span><span>테마</span>
@@ -1063,73 +958,76 @@ select.form-input{cursor:pointer;-webkit-appearance:none;background-image:url("d
 // ═══════════════════════════════════════════════
 // I18N (다국어)
 // ═══════════════════════════════════════════════
-// ═══════════════════════════════════════════════
-// I18N (다국어) - 총 6개국어 완벽 지원 매트릭스 (설명문 포함 풀버전)
-// ═══════════════════════════════════════════════
 const I18N = {
   ko: {
-    sys_desc:"미팅 알람 시스템", nav_dash:"대시보드", nav_create:"미팅 등록", nav_recurring:"정기 미팅 관리", nav_schedules:"개인 및 팀 일정", nav_members:"구성원 관리", nav_settings:"연동 설정", nav_today:"오늘 내 일정", nav_switch_group:"회사(그룹) 전환", btn_logout:"🚪 로그아웃", btn_save:"저장", btn_close:"닫기", btn_cancel:"취소", btn_ok:"확인", 
-    create_desc:"새 미팅을 등록하고 참석자에게 알람을 발송합니다", rec_desc:"정기적인 회의 템플릿을 만들고 관리하세요.", sch_desc:"자유롭게 일정을 메모하고 공유하세요.", mem_desc:"부서 및 직원을 관리합니다", set_desc:"슬랙 연동을 설정합니다",
-    c_info:"기본 정보", c_alarm:"알람 설정", c_title:"미팅 제목 *", c_date:"날짜 *", c_time:"시간 *", c_loc:"장소 *", c_agenda:"미팅 안건", c_att:"참석자 지정", btn_submit:"미팅 등록하기", filter_mine:"내 미팅만", filter_all:"전체 보기", view_cal:"캘린더 보기", stat_total:"전체 미팅", stat_up:"예정 미팅", stat_live:"진행중 미팅", stat_today:"오늘 미팅", stat_wait:"대기 알람", conn_wait:"연결 중...", tab_login:"로그인", tab_register:"회원가입",
-    archive_title:"🗄️ 아카이브", archive_desc:"회의록이 있는 삭제된 미팅이 보관됩니다", sg_title:"🏢 회사(그룹) 전환", sg_desc:"등록된 여러 회사/그룹을 원클릭으로 이동합니다.", sg_list:"✅ 등록된 회사(그룹) 목록", sg_add:"➕ 새 회사(그룹) 연결하기", sg_btn:"검증 및 내 목록에 추가"
+    server_setup:"서버 연결 설정", server_ip_desc:"서버 PC의 IP 주소를 입력하세요", server_ip_label:"서버 IP 주소",
+    server_tip_1:"💡 서버 PC에서 <b>서버시작.bat</b>을 실행하면", server_tip_2:"화면에 IP 주소가 표시됩니다",
+    btn_connect:"연결하기", sys_desc:"미팅 알람 시스템", tab_login:"로그인", tab_register:"회원가입",
+    label_name:"이름", label_pw:"비밀번호", btn_login:"로그인", no_account:"계정이 없으신가요?",
+    change_server:"서버 주소 변경", label_name_req:"이름 *", label_dept_req:"부서 *", label_pw_req:"비밀번호 * (4자 이상)",
+    label_pw_conf:"비밀번호 확인 *", btn_register:"가입하기", nav_menu:"메뉴", nav_dash:"대시보드",
+    nav_create:"미팅 등록", nav_members:"구성원 관리", nav_settings:"연동 설정", conn_wait:"연결 중...",
+    btn_logout:"🚪 로그아웃", filter_mine:"내 미팅만", filter_all:"전체 보기", view_cal:"캘린더 보기",
+    btn_show_hid:"👁 숨긴 미팅", stat_total:"전체 미팅", stat_up:"예정 미팅", stat_live:"진행중 미팅",
+    stat_today:"오늘 미팅", stat_wait:"대기 알람", cal_prev:"이전달", cal_next:"다음달",
+    create_desc:"새 미팅을 등록하고 참석자에게 알람을 발송합니다", c_info:"기본 정보", c_title:"미팅 제목 *",
+    c_date:"날짜 *", c_time:"시간 *", c_loc:"장소 *", c_agenda:"미팅 안건", c_link:"비대면 미팅 (링크)",
+    c_alarm:"알람 설정", c_alarm1:"1차 알람 (미팅 전)", a_30m:"30분", a_1h:"1시간", a_2h:"2시간", a_1d:"하루 전",
+    a_min:"분", a_tip1:"알람 3단계: ", a_tip2:"1차 알람", a_tip3:"5분 전", a_tip4:"미팅 시작",
+    c_att:"참석자 지정", c_att_sub:"(개인 일정 시 생략 가능)", t_indiv:"개별 추가", t_dept:"부서 전체",
+    c_sel_att:"선택된 참석자 ", c_p:"명", btn_submit:"미팅 등록하기", mem_desc:"부서 및 직원을 관리합니다",
+    btn_add_dept:"＋ 부서 추가", set_desc:"슬랙 연동을 설정합니다", set_slack_desc:"슬랙 채널에 미팅 알람을 자동으로 전송합니다.<br>슬랙 앱 → 채널 설정 → Incoming Webhooks에서 URL을 복사하세요.",
+    set_ch:"채널", btn_save:"저장", btn_test:"테스트", set_srv:"서버 정보", btn_ok:"확인", btn_go_dash:"대시보드 →",
+    min_title:"회의록 작성", min_author:"작성자", min_content:"회의 내용 기록 (Minutes) *", btn_close:"닫기",
+    btn_save_min:"회의록 저장", m_dept_add:"부서 추가", m_dept_name:"부서 이름 *", m_color:"색상", btn_cancel:"취소",
+    m_emp_add:"직원 추가", m_emp_name:"이름 *", m_emp_dept:"부서 *", m_emp_pw:"비밀번호 * (4자 이상)",
+    btn_min_view:"📝 회의록 보기", btn_min_write:"📝 회의록 작성",
+    nav_schedules:"개인 및 팀 일정", sch_title:"개인 및 팀 일정", sch_desc:"자유롭게 일정을 메모하고 공유하세요. (날짜 클릭 시 상세보기 및 추가)",
+    f_sch_my:"내 일정", f_sch_team:"팀 일정", f_sch_all:"전체 일정", modal_sch_title:"일정 등록",
+    sch_ph_label:"일정 내용 *", btn_save_sch:"일정 저장", btn_add_new_sch:"새 일정 등록",
+    min_history:"전체 회의록 기록", min_my_record:"회의록 작성 (새로 적으면 하단에 추가됩니다)",
+    nav_today: "오늘 내 일정", today_meetings: "📅 오늘의 미팅", today_schedules: "📝 오늘의 메모 일정", today_empty: "예정된 항목이 없습니다",
+    nav_recurring: "정기 미팅 관리", rec_desc: "정기적인 회의 템플릿을 만들고 관리하세요.", btn_add_rec: "＋ 새 정기 미팅 등록", rec_title: "정기 미팅 등록", rec_freq: "반복 주기", rec_weekly: "매주 (Weekly)", rec_biweekly: "2주마다 (Bi-weekly)", rec_monthly: "매월 (Monthly)", rec_day_sel: "요일 선택", rec_month_rule: "상세 설정", rec_override_title: "✏️ 이번 회차만 수정", rec_skip: "이번 회차 미팅 취소 (건너뛰기)"
   },
   en: {
-    sys_desc:"Meeting Alarm System", nav_dash:"Dashboard", nav_create:"Schedule Meeting", nav_recurring:"Recurring Meetings", nav_schedules:"Schedules", nav_members:"Members", nav_settings:"Settings", nav_today:"Today", nav_switch_group:"Switch Company", btn_logout:"🚪 Logout", btn_save:"Save", btn_close:"Close", btn_cancel:"Cancel", btn_ok:"OK", 
-    create_desc:"Schedule new meetings & notify attendees", rec_desc:"Create and manage recurring meeting templates.", sch_desc:"Free memo schedules. Click date for details.", mem_desc:"Manage Depts & Staff", set_desc:"Slack Integration",
-    c_info:"Basic Info", c_alarm:"Alarm Setup", c_title:"Title *", c_date:"Date *", c_time:"Time *", c_loc:"Location *", c_agenda:"Agenda", c_att:"Attendees", btn_submit:"Submit", filter_mine:"My Meetings", filter_all:"All Meetings", view_cal:"Calendar", stat_total:"Total", stat_up:"Upcoming", stat_live:"Live", stat_today:"Today", stat_wait:"Pending", conn_wait:"Connecting...", tab_login:"Login", tab_register:"Register",
-    archive_title:"🗄️ Archive", archive_desc:"Deleted meetings with minutes are stored here.", sg_title:"🏢 Switch Company", sg_desc:"Switch between registered companies with one click.", sg_list:"✅ Registered Companies", sg_add:"➕ Add New Company", sg_btn:"Verify & Add to My List"
-  },
-  vi: {
-    sys_desc:"Hệ thống Báo động Cuộc họp", nav_dash:"Bảng điều khiển", nav_create:"Tạo cuộc họp", nav_recurring:"Họp định kỳ", nav_schedules:"Lịch trình", nav_members:"Thành viên", nav_settings:"Cài đặt", nav_today:"Hôm nay", nav_switch_group:"Chuyển công ty", btn_logout:"🚪 Đăng xuất", btn_save:"Lưu", btn_close:"Đóng", btn_cancel:"Hủy", btn_ok:"OK", 
-    create_desc:"Tạo cuộc họp mới & thông báo", rec_desc:"Tạo và quản lý mẫu cuộc họp định kỳ.", sch_desc:"Ghi chú lịch trình tự do.", mem_desc:"Quản lý phòng ban & NV", set_desc:"Tích hợp Slack",
-    c_info:"Thông tin cơ bản", c_alarm:"Cài đặt báo thức", c_title:"Tiêu đề *", c_date:"Ngày *", c_time:"Giờ *", c_loc:"Địa điểm *", c_agenda:"Nội dung", c_att:"Người tham gia", btn_submit:"Đăng ký", filter_mine:"Của tôi", filter_all:"Tất cả", view_cal:"Lịch", stat_total:"Tổng", stat_up:"Sắp tới", stat_live:"Đang diễn ra", stat_today:"Hôm nay", stat_wait:"Đang chờ", conn_wait:"Đang kết nối...", tab_login:"Đăng nhập", tab_register:"Đăng ký",
-    archive_title:"🗄️ Lưu trữ (Archive)", archive_desc:"Các cuộc họp đã xóa có biên bản được lưu trữ ở đây.", sg_title:"🏢 Chuyển công ty", sg_desc:"Chuyển đổi giữa các công ty đã đăng ký bằng một cú nhấp chuột.", sg_list:"✅ Các công ty đã đăng ký", sg_add:"➕ Thêm công ty mới", sg_btn:"Xác minh & Thêm"
-  },
-  zh: {
-    sys_desc:"会议警报系统", nav_dash:"仪表板", nav_create:"安排会议", nav_recurring:"定期会议", nav_schedules:"日程安排", nav_members:"成员管理", nav_settings:"设置", nav_today:"今天日程", nav_switch_group:"切换公司", btn_logout:"🚪 登出", btn_save:"保存", btn_close:"关闭", btn_cancel:"取消", btn_ok:"确定", 
-    create_desc:"安排新会议并通知与会者", rec_desc:"创建和管理定期会议模板。", sch_desc:"免费备忘录日程。点击日期查看详情。", mem_desc:"管理部门和员工", set_desc:"Slack 集成",
-    c_info:"基本信息", c_alarm:"警报设置", c_title:"会议标题 *", c_date:"日期 *", c_time:"时间 *", c_loc:"地点 *", c_agenda:"议程", c_att:"参会者", btn_submit:"提交会议", filter_mine:"我的会议", filter_all:"所有会议", view_cal:"日历视图", stat_total:"总会议", stat_up:"即将举行", stat_live:"进行中", stat_today:"今日", stat_wait:"待办警报", conn_wait:"连接中...", tab_login:"登录", tab_register:"注册",
-    archive_title:"🗄️ 归档", archive_desc:"带有会议纪要的已删除会议将存储在此处", sg_title:"🏢 切换公司", sg_desc:"一键在注册公司之间切换。", sg_list:"✅ 已注册公司", sg_add:"➕ 添加新公司", sg_btn:"验证并添加到我的列表"
-  },
-  hi: {
-    sys_desc:"मीटिंग अलार्म सिस्टम", nav_dash:"डैशबोर्ड", nav_create:"मीटिंग तय करें", nav_recurring:"नियमित मीटिंग", nav_schedules:"कार्यक्रम", nav_members:"सदस्य", nav_settings:"सेटिंग्स", nav_today:"आज", nav_switch_group:"कंपनी बदलें", btn_logout:"🚪 लॉग आउट", btn_save:"सहेजें", btn_close:"बंद करें", btn_cancel:"रद्द करें", btn_ok:"ठीक है", 
-    create_desc:"नई मीटिंग शेड्यूल करें", rec_desc:"आवर्ती मीटिंग टेम्पलेट बनाएं।", sch_desc:"निःशुल्क मेमो अनुसूची।", mem_desc:"विभाग और कर्मचारी प्रबंधित करें", set_desc:"स्लैक एकीकरण",
-    c_info:"बुनियादी जानकारी", c_alarm:"अलार्म सेटिंग्स", c_title:"शीर्षक *", c_date:"दिनांक *", c_time:"समय *", c_loc:"स्थान *", c_agenda:"एजेंडा", c_att:"उपस्थित लोग", btn_submit:"जमा करें", filter_mine:"मेरी मीटिंग", filter_all:"सभी", view_cal:"कैलेंडर", stat_total:"कुल", stat_up:"आगामी", stat_live:"लाइव", stat_today:"आज", stat_wait:"लंबित", conn_wait:"जुड़ रहा है...", tab_login:"लॉग इन", tab_register:"पंजीकरण",
-    archive_title:"🗄️ पुरालेख", archive_desc:"कार्यवृत्त वाली हटाई गई बैठकें यहाँ संग्रहीत हैं", sg_title:"🏢 कंपनी बदलें", sg_desc:"पंजीकृत कंपनियों间的 स्विच करें।", sg_list:"✅ पंजीकृत कंपनियाँ", sg_add:"➕ नई कंपनी जोड़ें", sg_btn:"सत्यापित करें और जोड़ें"
-  },
-  es: {
-    sys_desc:"Sistema de alarma", nav_dash:"Panel", nav_create:"Programar Reunión", nav_recurring:"Reuniones Recurrentes", nav_schedules:"Horarios", nav_members:"Miembros", nav_settings:"Ajustes", nav_today:"Hoy", nav_switch_group:"Cambiar Empresa", btn_logout:"🚪 Cerrar sesión", btn_save:"Guardar", btn_close:"Cerrar", btn_cancel:"Cancelar", btn_ok:"Aceptar", 
-    create_desc:"Programar nuevas reuniones y notificar", rec_desc:"Crear y administrar plantillas recurrentes.", sch_desc:"Horarios de notas libres.", mem_desc:"Administrar departamentos", set_desc:"Integración de Slack",
-    c_info:"Información básica", c_alarm:"Ajustes de alarma", c_title:"Título *", c_date:"Fecha *", c_time:"Hora *", c_loc:"Ubicación *", c_agenda:"Agenda", c_att:"Asistentes", btn_submit:"Enviar", filter_mine:"Mis reuniones", filter_all:"Todas", view_cal:"Calendario", stat_total:"Total", stat_up:"Próximas", stat_live:"En vivo", stat_today:"Hoy", stat_wait:"Pendiente", conn_wait:"Conectando...", tab_login:"Iniciar sesión", tab_register:"Registrarse",
-    archive_title:"🗄️ Archivo", archive_desc:"Las reuniones eliminadas con actas se almacenan aquí.", sg_title:"🏢 Cambiar de empresa", sg_desc:"Cambie entre empresas registradas con un clic.", sg_list:"✅ Empresas registradas", sg_add:"➕ Agregar nueva empresa", sg_btn:"Verificar y agregar a mi lista"
+    server_setup:"Server Setup", server_ip_desc:"Enter Server PC IP", server_ip_label:"Server IP",
+    server_tip_1:"💡 Run <b>server_start.bat</b> on PC", server_tip_2:"to see the IP address",
+    btn_connect:"Connect", sys_desc:"Meeting Alarm System", tab_login:"Login", tab_register:"Register",
+    label_name:"Name", label_pw:"Password", btn_login:"Login", no_account:"No account?",
+    change_server:"Change Server", label_name_req:"Name *", label_dept_req:"Department *", label_pw_req:"Password * (min 4)",
+    label_pw_conf:"Confirm Password *", btn_register:"Register", nav_menu:"MENU", nav_dash:"Dashboard",
+    nav_create:"Schedule Meeting", nav_members:"Members", nav_settings:"Settings", conn_wait:"Connecting...",
+    btn_logout:"🚪 Logout", filter_mine:"My Meetings", filter_all:"All Meetings", view_cal:"Calendar View",
+    btn_show_hid:"👁 Hidden Meetings", stat_total:"Total", stat_up:"Upcoming", stat_live:"Live",
+    stat_today:"Today", stat_wait:"Pending", cal_prev:"Prev", cal_next:"Next",
+    create_desc:"Schedule new meetings & notify attendees", c_info:"Basic Info", c_title:"Meeting Title *",
+    c_date:"Date *", c_time:"Time *", c_loc:"Location *", c_agenda:"Agenda", c_link:"Remote Link",
+    c_alarm:"Alarm Setup", c_alarm1:"1st Alarm (Before)", a_30m:"30m", a_1h:"1h", a_2h:"2h", a_1d:"1 Day",
+    a_min:"min", a_tip1:"3 Steps: ", a_tip2:"1st Alarm", a_tip3:"5m Before", a_tip4:"Start",
+    c_att:"Add Attendees", c_att_sub:"(Optional for personal)", t_indiv:"Individual", t_dept:"By Dept",
+    c_sel_att:"Selected: ", c_p:"person(s)", btn_submit:"Register Meeting", mem_desc:"Manage Depts & Staff",
+    btn_add_dept:"＋ Add Dept", set_desc:"Slack Integration", set_slack_desc:"Auto-send alarms to Slack.<br>Copy URL from Incoming Webhooks.",
+    set_ch:"Channel", btn_save:"Save", btn_test:"Test", set_srv:"Server Info", btn_ok:"OK", btn_go_dash:"Dashboard →",
+    min_title:"Meeting Minutes", min_author:"Author", min_content:"Minutes Content *", btn_close:"Close",
+    btn_save_min:"Save Minutes", m_dept_add:"Add Dept", m_dept_name:"Dept Name *", m_color:"Color", btn_cancel:"Cancel",
+    m_emp_add:"Add Staff", m_emp_name:"Name *", m_emp_dept:"Dept *", m_emp_pw:"Password * (min 4)",
+    btn_min_view:"📝 View Minutes", btn_min_write:"📝 Write Minutes",
+    nav_schedules:"Personal & Team Schedules", sch_title:"Personal & Team Schedules", sch_desc:"Free memo schedules. Click date for details.",
+    f_sch_my:"My Schedule", f_sch_team:"Team Schedule", f_sch_all:"All Schedules", modal_sch_title:"Add Schedule",
+    sch_ph_label:"Schedule Content *", btn_save_sch:"Save", btn_add_new_sch:"New Schedule",
+    min_history:"Minutes History", min_my_record:"Write Minutes (Appends as a new block)",
+    nav_today: "Today's Schedule", today_meetings: "📅 Today's Meetings", today_schedules: "📝 Today's Memos", today_empty: "Nothing scheduled for today",
+    nav_recurring: "Recurring Meetings", rec_desc: "Create and manage recurring meeting templates.", btn_add_rec: "＋ New Recurring Meeting", rec_title: "Recurring Meeting Setup", rec_freq: "Frequency", rec_weekly: "Weekly", rec_biweekly: "Bi-weekly", rec_monthly: "Monthly", rec_day_sel: "Select Days", rec_month_rule: "Monthly Rule", rec_override_title: "✏️ Modify This Instance", rec_skip: "Skip this meeting (Cancel)"
   }
 };
-const SUPPORTED_LANGS = ['en', 'ko', 'vi', 'zh', 'hi', 'es'];
+
 let g_lang = localStorage.getItem('ma_lang') || 'ko';
 
-// 언어 선택 모달창 띄우기/닫기
-function openLangModal() { document.getElementById('lang-modal-overlay').classList.add('show'); }
-function closeLangModal() { document.getElementById('lang-modal-overlay').classList.remove('show'); }
+function toggleLang() { g_lang = g_lang === 'ko' ? 'en' : 'ko'; localStorage.setItem('ma_lang', g_lang); applyLang(); }
 
-// 선택한 언어 적용 및 저장
-function setLang(langCode) {
-  g_lang = langCode;
-  localStorage.setItem('ma_lang', g_lang);
-  applyLang();
-  closeLangModal();
-}
-
-// 화면 텍스트 렌더링
 function applyLang() {
-  document.querySelectorAll('[data-i18n]').forEach(el => { 
-    const key = el.getAttribute('data-i18n'); 
-    if(I18N[g_lang] && I18N[g_lang][key]) el.innerHTML = I18N[g_lang][key]; 
-  });
-  
-  // 사이드바 버튼 텍스트 고정
-  const btn = document.getElementById('lang-toggle-btn'); 
-  if(btn) btn.innerHTML = '🌐 언어 설정 (Language)';
-  
+  document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(I18N[g_lang][key]) el.innerHTML = I18N[g_lang][key]; });
+  const btn = document.getElementById('lang-toggle-btn'); if(btn) btn.innerHTML = g_lang === 'ko' ? '🌐 English Mode' : '🌐 한국어 모드';
   if(S.meetings) renderDashboard(); 
   if(document.getElementById('page-schedules').classList.contains('active')) renderSchCalendar();
 }
@@ -1152,8 +1050,15 @@ function fixIme(el){
 }
 
 function safeFocus(id){
-    // 모바일 키보드(IME) 먹통 및 버벅거림 방지를 위해 강제 포커스 기능 완전 비활성화
-    return;
+    // 모바일에서 강제 포커스는 키보드 문제 유발 - 비활성화
+    if(window.innerWidth > 768) {
+        setTimeout(() => {
+            try {
+                const el = typeof id === 'string' ? document.getElementById(id) : id;
+                if(el) el.focus();
+            } catch(e){}
+        }, 100);
+    }
 }
 
 // Electron 환경에서는 preload.js의 electronAPI 사용, 웹에서는 null
@@ -1174,20 +1079,13 @@ function checkAdmin(userName) {
 let S = { 
   serverUrl: '', currentUser: '', currentDeptId: '',
   companyId: localStorage.getItem('ma_company_id') || '', 
-  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(),
-  todayDoneIds: new Set(), // ★ 추가됨
-  viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
+  // ★ 추가: 회사 ID  
+  meetings: [], users: [], depts: [], schedules: [], selectedAttendees: [], alarm1Min: 60, hiddenIds: new Set(), viewFilter: 'mine', viewMode: 'list', schFilter: 'team', slackUrl: '', slackChannel: '',
   recurringTemplates: [],
   recurringOverrides: {},
   recurringCompleted: []
 };
-
-// ★ 추가됨: 서버로 데이터 보내기
-async function syncUserPrefs() {
-  if (!S.currentUser) return;
-  const prefs = { hiddenIds: [...S.hiddenIds], todayDoneIds: [...S.todayDoneIds] };
-  try { await api('PUT', `/users/${encodeURIComponent(S.currentUser)}/prefs`, prefs); } catch(e) { }
-}let selectedRecAttendees = []; // 정기 미팅용 분리
+let selectedRecAttendees = []; // 정기 미팅용 분리
 
 function saveHiddenIds() { try { localStorage.setItem('ma_hidden_ids', JSON.stringify([...S.hiddenIds])); } catch(e) {} }
 function loadHiddenIds() { try { const data = localStorage.getItem('ma_hidden_ids'); if(data) S.hiddenIds = new Set(JSON.parse(data)); } catch(e) { S.hiddenIds = new Set(); } }
@@ -1250,24 +1148,20 @@ function showCompanySetup() {
 }
 
 function showCoTab(tab) {
-  // 탭 터치 처리가 끝난 0.01초 뒤에 화면을 열어주어 터치 꼬임 완벽 방지
-  setTimeout(() => {
-    document.getElementById('co-join').style.display = tab === 'join' ? 'block' : 'none';
-    document.getElementById('co-create').style.display = tab === 'create' ? 'block' : 'none';
-    document.getElementById('tab-join-btn').classList.toggle('active', tab === 'join');
-    document.getElementById('tab-create-btn').classList.toggle('active', tab === 'create');
-  }, 10);
-}async function checkInviteCode() {
+  document.getElementById('co-join').style.display = tab === 'join' ? 'block' : 'none';
+  document.getElementById('co-create').style.display = tab === 'create' ? 'block' : 'none';
+  document.getElementById('tab-join-btn').classList.toggle('active', tab === 'join');
+  document.getElementById('tab-create-btn').classList.toggle('active', tab === 'create');
+}
+
+async function checkInviteCode() {
   const code = document.getElementById('invite-code-input').value.trim().toUpperCase();
   if (!code) return alert('코드를 입력하세요');
   try {
     const res = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r => r.json());
     if (res.error) return alert('유효하지 않은 초대코드입니다');
-    
     S.companyId = res.id;
     localStorage.setItem('ma_company_id', res.id);
-    localStorage.setItem('ma_company_name', res.name); // ★ 회사명 저장 추가 (res.name 사용)
-
     await loadDepts().catch(()=>{});
     await loadUsers().catch(()=>{});
     showAuthScreen();
@@ -1285,11 +1179,8 @@ async function createNewCompany() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ companyName: name })
     }).then(r => r.json());
-    
     S.companyId = res.companyId;
     localStorage.setItem('ma_company_id', res.companyId);
-    localStorage.setItem('ma_company_name', name); // ★ 회사명 저장 추가 (입력한 name 사용)
-
     alert(`✅ 회사 등록 성공!\n\n초대 코드: ${res.inviteCode}\n\n이 코드를 동료들에게 공유하세요.`);
     await loadDepts().catch(()=>{});
     await loadUsers().catch(()=>{});
@@ -1297,6 +1188,7 @@ async function createNewCompany() {
   } catch(e) { alert('오류가 발생했습니다'); }
   finally { btn.disabled = false; }
 }
+
 function changeCompany() { localStorage.removeItem('ma_company_id'); location.reload(); }
 
 async function loadSchedules() { try { S.schedules = await api('GET', '/schedules') || []; } catch(e) { S.schedules = []; } loadHiddenIds(); }
@@ -1318,27 +1210,8 @@ function showCompanySetup() {
   document.getElementById('main-app').style.display = 'none';
 }
 function changeServer() { localStorage.clear(); location.reload(); }
-function showAuthScreen() { 
-  document.getElementById('company-setup').style.display='none'; 
-  document.getElementById('auth-screen').style.display='flex'; 
-  document.getElementById('main-app').style.display='none'; 
-  
-  // ★ 로그인 화면을 열 때, 내가 방금 선택한 회사명을 가져와서 타이틀로 박아줍니다.
-  const cName = localStorage.getItem('ma_company_name') || 'MeetAlarm';
-  const titleEl = document.getElementById('auth-co-name');
-  if(titleEl) titleEl.textContent = cName;
-  
-  buildLoginSelect(); buildRegDeptSelect(); 
-}
-function showAuthTab(tab) { 
-  // 탭 터치 처리가 끝난 0.01초 뒤에 화면을 열어주어 터치 꼬임 완벽 방지
-  setTimeout(() => {
-    document.getElementById('tab-login').style.display = tab==='login'?'block':'none'; 
-    document.getElementById('tab-reg').style.display = tab==='register'?'block':'none'; 
-    document.getElementById('tab-login-btn').classList.toggle('active', tab==='login'); 
-    document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register'); 
-  }, 10);
-}
+function showAuthScreen() { document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='flex'; document.getElementById('main-app').style.display='none'; buildLoginSelect(); buildRegDeptSelect(); }
+function showAuthTab(tab) { document.getElementById('tab-login').style.display = tab==='login'?'block':'none'; document.getElementById('tab-reg').style.display = tab==='register'?'block':'none'; document.getElementById('tab-login-btn').classList.toggle('active', tab==='login'); document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register'); }
 function buildLoginSelect() { const sel=document.getElementById('login-name'); sel.innerHTML=S.users.map(u=>`<option value="${u.name}">${u.name} (${S.depts.find(d=>d.id===u.dept_id)?.name||u.dept_id})</option>`).join(''); }
 function buildRegDeptSelect() { 
   const sel=document.getElementById('reg-dept'); 
@@ -1353,55 +1226,21 @@ function buildRegDeptSelect() {
 async function doLogin() {
   const name=document.getElementById('login-name').value; const pw=document.getElementById('login-pw').value; const errEl=document.getElementById('login-err');
   if(!pw){ errEl.textContent='비밀번호를 입력하세요'; errEl.classList.add('show'); return; }
+  // ★ 수정: pw 필드명 및 companyId 전송
   const r = await api('POST','/login',{name, pw, companyId: S.companyId});
   if(r.error){ errEl.textContent=r.error; errEl.classList.add('show'); return; }
-  errEl.classList.remove('show'); localStorage.setItem('ma_user', name);
-
-  // ★ 완벽 격리: 로그인한 사람만의 "독립된 프로필 가방" 생성/불러오기
-  try {
-    let profiles = JSON.parse(localStorage.getItem('ma_profiles') || '[]');
-    let existingProf = profiles.find(p => p.accounts.some(a => a.companyId === S.companyId && a.userName === name));
-    
-    if (existingProf) {
-      // 내 가방이 이미 있으면 비번 최신화 후 장착
-      const acc = existingProf.accounts.find(a => a.companyId === S.companyId && a.userName === name);
-      if(acc) acc.pw = pw;
-      localStorage.setItem('ma_current_prof_id', existingProf.id);
-    } else {
-      // 처음 로그인하면 나만의 새 가방 발급
-      const newProfId = 'prof_' + Date.now() + Math.floor(Math.random()*1000);
-      const cName = localStorage.getItem('ma_company_name') || '현재 회사';
-      profiles.push({ id: newProfId, accounts: [{ companyId: S.companyId, companyName: cName, userName: name, pw: pw }] });
-      localStorage.setItem('ma_current_prof_id', newProfId);
-    }
-    localStorage.setItem('ma_profiles', JSON.stringify(profiles));
-  } catch(e) {}
-
-  enterApp(name);
+  errEl.classList.remove('show'); localStorage.setItem('ma_user', name); enterApp(name);
 }
 
-async function doRegister() {  
-  const name=document.getElementById('reg-name').value.trim(); 
-  const email=document.getElementById('reg-email').value.trim(); // 이메일 값 가져오기
-  const deptId=document.getElementById('reg-dept').value || ''; 
-  const pw=document.getElementById('reg-pw').value; 
-  const pw2=document.getElementById('reg-pw2').value;
-  const errEl=document.getElementById('reg-err'); 
-  const okEl=document.getElementById('reg-ok');
-  
+async function doRegister() {
+  const name=document.getElementById('reg-name').value.trim(); const deptId=document.getElementById('reg-dept').value || ''; const pw=document.getElementById('reg-pw').value; const pw2=document.getElementById('reg-pw2').value;
+  const errEl=document.getElementById('reg-err'); const okEl=document.getElementById('reg-ok');
   if(!name){ errEl.textContent='이름을 입력하세요'; errEl.classList.add('show'); return; }
-  if(!email){ errEl.textContent='이메일을 입력하세요'; errEl.classList.add('show'); return; } // 이메일 검사 로직 추가
-  // 간단한 이메일 정규식 검사
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(!emailRegex.test(email)) { errEl.textContent='올바른 이메일 형식이 아닙니다'; errEl.classList.add('show'); return; }
-
   if(pw.length<4){ errEl.textContent='비밀번호는 4자 이상'; errEl.classList.add('show'); return; }
   if(pw!==pw2){ errEl.textContent='비밀번호가 일치하지 않습니다'; errEl.classList.add('show'); return; }
   errEl.classList.remove('show');
-  
-  // 서버에 email 데이터 포함하여 전송
-  const r = await api('POST','/register',{name, email, deptId, pw, companyId: S.companyId});
-  // ... (이후 로직 동일) ...
+  // ★ 수정: pw 필드명 및 companyId 전송
+  const r = await api('POST','/register',{name, deptId, pw, companyId: S.companyId});
   if(r.error){ errEl.textContent=r.error; errEl.classList.add('show'); return; }
   await loadUsers(); buildLoginSelect(); okEl.textContent=`${name}님 가입 완료! 로그인해주세요`; okEl.classList.add('show'); showAuthTab('login'); document.getElementById('login-name').value=name;
 }
@@ -1409,64 +1248,25 @@ async function doRegister() {
 function doLogout() { localStorage.removeItem('ma_user'); if(ws) ws.close(); location.reload(); }
 
 async function enterApp(userName) {
-  // 1. 사용자 정보 및 부서 세팅
-  S.currentUser = userName; 
-  const user = S.users.find(u=>u.name===userName); 
-  S.currentDeptId = user ? user.dept_id : '';
-  
-  // ★ 추가됨: 서버에서 취소선 가져오기
-  S.todayDoneIds = new Set(user?.todayDoneIds || []);
-  
-  // 2. 화면 전환 (로그인창 숨기고 메인앱 표시)  document.getElementById('company-setup').style.display='none'; 
-  document.getElementById('auth-screen').style.display='none'; 
-  document.getElementById('main-app').style.display='flex';
-  
-  // 3. 사이드바 정보 업데이트
+  S.currentUser = userName; const user = S.users.find(u=>u.name===userName); S.currentDeptId = user ? user.dept_id : '';
+  document.getElementById('company-setup').style.display='none'; document.getElementById('auth-screen').style.display='none'; document.getElementById('main-app').style.display='flex';
   const dept = S.depts.find(d=>d.id===S.currentDeptId);
-  document.getElementById('sidebar-name').textContent = userName; 
-  document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
+  document.getElementById('sidebar-name').textContent = userName; document.getElementById('sidebar-dept').textContent = dept ? dept.name : '';
+  S.slackUrl = localStorage.getItem('ma_slack_url')||''; S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
+  const now = new Date(); const days=['일','월','화','수','목','금','토'];
+  document.getElementById('dash-greeting').textContent=`안녕하세요, ${userName}님 👋`; document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
   
-  // 4. 슬랙 연동 정보 로드
-  S.slackUrl = localStorage.getItem('ma_slack_url')||''; 
-  S.slackChannel = localStorage.getItem('ma_slack_ch')||'';
-  
-  // 5. 날짜 정보 생성
-  const now = new Date(); 
-  const days=['일','월','화','수','목','금','토'];
-  
-  // ★ 수정 포인트: [회사명] [이름]님 형태로 대시보드 인사말 변경
-  // ma_company_name이 없을 경우 공백으로 표시됩니다.
-  const companyName = localStorage.getItem('ma_company_name') || "";
-  document.getElementById('dash-greeting').innerHTML = 
-    `<span style="color:var(--brand); font-weight:700; margin-right:5px;">${companyName}</span>${userName}님`;
-  
-  document.getElementById('dash-date').textContent=`${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
-  
-  // 6. 데이터 비동기 로드 (미팅, 일정, 정기미팅)
   await loadMeetings(); 
   await loadSchedules();
   await loadRecurring();
   
-  // 7. UI 컴포넌트 초기화 및 서비스 시작 (웹소켓 연결 포함)
-  buildDeptPickerChips(); 
-  buildRecDeptPickerChips(); 
-  setDefaultFormDate(); 
-  renderDashboard(); 
-  renderMembers(); 
-  updateBadges(); 
-  connectWS(); 
-  startAlarmClock();
-  
-  // 8. 관리자 권한 체크 및 전용 메뉴 활성화
+buildDeptPickerChips(); buildRecDeptPickerChips(); setDefaultFormDate(); renderDashboard(); renderMembers(); updateBadges(); connectWS(); startAlarmClock();
   if (checkAdmin(S.currentUser)) { 
     document.getElementById('btn-add-dept').style.display = 'inline-block';
     document.getElementById('nav-settings').style.display = 'flex';
-    
-    // 모바일 더보기 메뉴의 연동설정 버튼도 관리자라면 표시
-    const mobileSetBtn = document.getElementById('mobile-nav-settings');
-    if(mobileSetBtn) mobileSetBtn.style.display = 'flex';
   }
 }
+
 function connectWS() {
   if(ws) ws.close();
   const wsUrl = SERVER_URL.replace('https://', 'wss://').replace('http://', 'ws://');
@@ -1492,21 +1292,7 @@ function connectWS() {
         fireEndedNotif(m);
       }
     }
-    if(msg.event==='users_updated') { 
-        S.users=msg.data; 
-        buildLoginSelect(); 
-        renderMembers(); 
-        // ★ 실시간 동기화: 내 설정값 즉시 업데이트 및 화면 새로고침
-        if (S.currentUser) {
-            const me = S.users.find(u => u.name === S.currentUser);
-            if (me) {
-                S.todayDoneIds = new Set(me.todayDoneIds || []);
-                if (document.getElementById('today-modal-overlay').classList.contains('show')) {
-                    openTodayModal(); // 팝업창 새로고침
-                }
-            }
-        }
-    }
+    if(msg.event==='users_updated') { S.users=msg.data; buildLoginSelect(); renderMembers(); }
     if(msg.event==='dept_updated')  { S.depts=msg.data; buildDeptPickerChips(); buildRecDeptPickerChips(); buildRegDeptSelect(); renderMembers(); }
     if(msg.event==='schedules_updated') { await loadSchedules(); renderSchCalendar(); if(document.getElementById('daily-view-overlay').classList.contains('show')) renderDailyViewList(document.getElementById('daily-view-date').value); }
     if(msg.event==='recurring_updated') { await loadRecurring(); renderRecurringTemplates(); renderDashboard(); }
@@ -1545,9 +1331,12 @@ function goto(id) {
   const navBtn = document.getElementById('nav-'+id);
   if(navBtn) navBtn.classList.add('active');
   
+  // 모바일 탭바 동기화
   document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
   const mtab = document.getElementById('mtab-'+id);
   if(mtab) mtab.classList.add('active');
+  
+  // 더보기 메뉴 닫기
   document.getElementById('mobile-more-menu').style.display = 'none';
 
   if(id==='dashboard') renderDashboard(); 
@@ -1556,16 +1345,7 @@ function goto(id) {
   if(id==='settings') { if(!checkAdmin(S.currentUser)) { toast('관리자만 접근 가능합니다', 'error'); return; } loadSettingsPage(); }
   if(id==='recurring') renderRecurringTemplates();
   if(id==='archive') renderArchive();
-  
-  
- // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
-  // 브라우저 렌더링 엔진과 IME 스레드 충돌 방지를 위해 강제 렌더링 제거
-  // ★ 모바일 키보드 먹통 & 한글 씹힘 버그 완벽 해결 (강제 Reflow)
-  // 브라우저 렌더링 엔진과 IME 스레드 충돌 방지를 위해 강제 렌더링 제거
-  if(id==='switch-group') {
-    renderSavedGroups();
-  }
-} // 이 닫는 괄호를 반드시 추가해야 합니다!
+}
 
 function toggleMobileMore() {
   const menu = document.getElementById('mobile-more-menu');
@@ -1934,12 +1714,7 @@ function renderCalendar() {
         avatar = `<span class="cal-ev-dot" style="background:${isMine?'#fff':dotColor};margin-top:4px;"></span>`;
       }
 
-      // 수정된 내용: 텍스트 래퍼에 한 줄 고정(nowrap)과 ellipsis 강제 적용
-      // 수정된 내용: 모바일에서 아바타 숨김 및 2줄 표시 처리를 위한 클래스 부여
-      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')" style="display:flex; align-items:flex-start; width:100%; max-width:100%; overflow:hidden;">
-        <div class="cal-mob-hide" style="flex-shrink:0; margin-top:1px;">${avatar}</div>
-        <div class="cal-mob-text" style="flex:1; margin-left:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${meet.title}</div>
-      </div>`;
+      return `<div class="${evClass}" title="${meet.title}" onclick="previewAlarm('${meet.id}')">${avatar}<div style="flex:1;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${meet.title}</div></div>`;
     }).join('');
     html += `<div class="${cellClass}"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
   }
@@ -1993,11 +1768,8 @@ function renderCalendarList() {
 }
 
 function switchRecPickerTab(tab, btn) { 
-  document.getElementById('recurring-modal-overlay').querySelectorAll('.picker-tab').forEach(t=>t.classList.remove('active')); 
-  btn.classList.add('active'); 
-  document.getElementById('rec-picker-individual').style.display=tab==='individual'?'block':'none'; 
-  document.getElementById('rec-picker-dept').style.display=tab==='dept'?'block':'none'; 
-  document.body.offsetHeight; // ★ 모바일 입력창 렌더링 강제 동기화
+  document.getElementById('recurring-modal-overlay').querySelectorAll('.picker-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); 
+  document.getElementById('rec-picker-individual').style.display=tab==='individual'?'block':'none'; document.getElementById('rec-picker-dept').style.display=tab==='dept'?'block':'none'; 
 }
 function buildRecDeptPickerChips() { const el=document.getElementById('rec-dept-picker-chips'); if(!el) return; el.innerHTML=S.depts.map(d=>`<div class="dept-chip" id="rdchip-${d.id}" onclick="toggleRecDept('${d.id}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color}"></span>${d.name} <span style="font-size:11px;color:var(--text3)">(${S.users.filter(u=>u.dept_id===d.id).length})</span></div>`).join(''); }
 function searchRecAttendees(q) {
@@ -2405,13 +2177,7 @@ async function leaveMeeting(id) {
 let alarm1Min=60, selectedAttendees=[];
 function setAlarmPreset(min, btn) { alarm1Min=min; document.querySelectorAll('.alarm-preset').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.getElementById('custom-alarm-min').value=min; }
 function setCustomAlarm(v) { const n=parseInt(v); if(n>0){ alarm1Min=n; document.querySelectorAll('.alarm-preset').forEach(b=>b.classList.remove('active')); } }
-function switchPickerTab(tab, btn) { 
-  document.querySelectorAll('#page-create .picker-tab').forEach(t=>t.classList.remove('active')); 
-  btn.classList.add('active'); 
-  document.getElementById('picker-individual').style.display=tab==='individual'?'block':'none'; 
-  document.getElementById('picker-dept').style.display=tab==='dept'?'block':'none'; 
-  document.body.offsetHeight; // ★ 모바일 입력창 렌더링 강제 동기화
-}
+function switchPickerTab(tab, btn) { document.querySelectorAll('#page-create .picker-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active'); document.getElementById('picker-individual').style.display=tab==='individual'?'block':'none'; document.getElementById('picker-dept').style.display=tab==='dept'?'block':'none'; }
 function buildDeptPickerChips() { const el=document.getElementById('dept-picker-chips'); if(!el) return; el.innerHTML=S.depts.map(d=>`<div class="dept-chip" id="dchip-${d.id}" onclick="toggleDept('${d.id}')"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${d.color}"></span>${d.name} <span style="font-size:11px;color:var(--text3)">(${S.users.filter(u=>u.dept_id===d.id).length})</span></div>`).join(''); }
 function searchAttendees(q) {
   const dd=document.getElementById('attendee-dd'); if(!q.trim()){ dd.classList.remove('open'); return; }
@@ -2516,18 +2282,7 @@ function renderSchCalendar() {
             const borderCol = isMine ? 'var(--brand)' : 'var(--border3)';
             const txtCol = isMine ? 'var(--text)' : 'var(--text2)';
             
-            // ★ 1. 작성자 이름에서 첫 글자 추출 및 부서 색상 가져오기
-            const initial = sch.author ? sch.author.charAt(0) : '';
-            const c = getDeptColor(sch.dept_id || sch.deptId) || borderCol;
-            
-            // ★ 2. 미팅 캘린더와 동일한 아바타 태그 생성 (모바일 숨김 클래스 cal-mob-hide 적용)
-            const avatarHtml = `<div class="cal-mob-hide" style="min-width:15px;height:15px;border-radius:50%;background:${isMine ? 'var(--brand)' : c+'22'};color:${isMine ? '#fff' : c};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:2px;flex-shrink:0;">${initial}</div>`;
-
-            // ★ 3. Flex 구조로 아바타와 텍스트를 나란히 배치 (텍스트는 cal-mob-text로 말줄임 제어)
-            return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:flex; align-items:flex-start; overflow:hidden; padding:4px 6px; font-weight:${isMine?'700':'500'}; transition:filter 0.15s; margin-bottom:4px;" title="${sch.content}">
-              ${avatarHtml}
-              <div class="cal-mob-text" style="flex:1; margin-left:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sch.content}</div>
-            </div>`;
+            return `<div class="sch-ev" style="background:${bgClass}; border-left:3px solid ${borderCol}; color:${txtCol}; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; white-space:normal; word-break:break-all; overflow:hidden; text-overflow:ellipsis; padding:4px 6px; font-weight:${isMine?'700':'500'}; line-height:1.3;" title="${sch.content}">${sch.content}</div>`;
         }).join('');
         html += `<div class="${cellClass}" onclick="openDailyViewModal('${dateStr}')"><div class="cal-date">${d}</div><div class="cal-ev-list">${eventsHtml}</div></div>`;
     }
@@ -2658,15 +2413,18 @@ async function delSchedule(id) {
 // 🔴 TODAY SUMMARY MODAL 로직
 // ═══════════════════════════════════════════════
 function toggleTodayItem(id) {
+    let doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
     const el = document.getElementById('today-item-' + id);
-    if (S.todayDoneIds.has(String(id))) {
-        S.todayDoneIds.delete(String(id));
+    
+    if (doneIds.includes(id)) {
+        doneIds = doneIds.filter(x => x !== id);
         if (el) el.classList.remove('done-strike');
     } else {
-        S.todayDoneIds.add(String(id));
+        doneIds.push(id);
         if (el) el.classList.add('done-strike');
     }
-    syncUserPrefs(); // ★ 서버 연동
+    
+    localStorage.setItem('ma_today_done', JSON.stringify(doneIds));
 }
 
 function openTodayModal() {
@@ -2678,6 +2436,7 @@ function openTodayModal() {
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
     const todayStrDate = now.toDateString();
     const cu = S.currentUser;
+    const doneIds = JSON.parse(localStorage.getItem('ma_today_done') || '[]');
 
     let allMeetingsToday = [...S.meetings];
     if (S.recurringTemplates) {
@@ -2699,7 +2458,7 @@ function openTodayModal() {
             const dt = new Date(m.datetime);
             const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             const stat = m.completed ? '✅ ' : '⏰ ';
-            const isDone = S.todayDoneIds.has(String(m.id)) ? 'done-strike' : '';
+            const isDone = doneIds.includes(m.id) ? 'done-strike' : '';
             
             return `<div class="today-item meet ${isDone}" id="today-item-${m.id}" onclick="toggleTodayItem('${m.id}')">
                 <div class="today-item-top"><span>${stat}${timeStr}</span><span>📍 ${m.location}</span></div>
@@ -2710,8 +2469,8 @@ function openTodayModal() {
 
     const mySchedules = S.schedules.filter(sch => {
         if(sch.date !== todayStr) return false;
-        if(sch.visibility === 'public' || sch.visibility === 'all') return true;
-        if((sch.visibility === 'team' || !sch.visibility) && (sch.dept_id === S.currentDeptId || sch.deptId === S.currentDeptId)) return true;
+        if(sch.visibility === 'public') return true;
+        if(sch.visibility === 'team' && sch.deptId === S.currentDeptId) return true;
         if(sch.visibility === 'private' && sch.author === cu) return true;
         return false;
     });
@@ -2725,7 +2484,8 @@ function openTodayModal() {
             if(sch.visibility === 'private') typeTxt = g_lang==='ko'?'나만보기':'Private';
             else if(sch.visibility === 'team') typeTxt = g_lang==='ko'?'팀 일정':'Team';
             else typeTxt = g_lang==='ko'?'전체 일정':'Public';
-            const isDone = S.todayDoneIds.has(String(sch.id)) ? 'done-strike' : '';
+
+            const isDone = doneIds.includes(sch.id) ? 'done-strike' : '';
 
             return `<div class="today-item sch-${sch.visibility} ${isDone}" id="today-item-${sch.id}" onclick="toggleTodayItem('${sch.id}')">
                 <div class="today-item-top"><span>${typeTxt}</span><span>👤 ${sch.author}</span></div>
@@ -2805,169 +2565,14 @@ function fixIme(el){
 }
 
 function safeFocus(id){
-    return; // 모바일 버벅임 및 키보드 먹통 방지를 위해 강제 포커스 완전 무력화
-}
-
-// ═══════════════════════════════════════════════
-// 🔴 독립형 멀티 프로필 (Private Profile) 로직
-// ═══════════════════════════════════════════════
-function getProfiles() { try { return JSON.parse(localStorage.getItem('ma_profiles') || '[]'); } catch(e) { return []; } }
-function saveProfiles(profiles) { localStorage.setItem('ma_profiles', JSON.stringify(profiles)); }
-function getCurrentProfile() {
-  const pId = localStorage.getItem('ma_current_prof_id');
-  return getProfiles().find(p => p.id === pId) || null;
-}
-
-async function verifyAndAddGroup() {
-  const code = document.getElementById('sg-code').value.trim().toUpperCase();
-  const coName = document.getElementById('sg-co-name').value.trim();
-  const name = document.getElementById('sg-name').value.trim();
-  const pw = document.getElementById('sg-pw').value;
-
-  if(!code || !coName || !name || !pw) return toast('초대코드, 회사명, 이름, 비밀번호를 모두 정확히 입력하세요', 'error');
-  const btn = document.querySelector('button[onclick="verifyAndAddGroup()"]'); btn.disabled = true;
-
-  try {
-    const resCo = await fetch(`${SERVER_URL}/api/company/check/${code}`).then(r=>r.json());
-    if(resCo.error) throw new Error('유효하지 않은 초대코드입니다');
-    
-    // ★ 4중 보안: 입력한 회사명과 서버의 실제 회사명 완벽 일치 검증
-    if(resCo.name !== coName) throw new Error('입력하신 회사명이 실제와 다릅니다. 정확히 입력해주세요.');
-
-    const resLogin = await api('POST', '/login', { name, pw, companyId: resCo.id });
-    if(resLogin.error) throw new Error('이름 또는 비밀번호가 일치하지 않습니다');
-
-    // ★ 내 가방에만 이 회사를 추가함
-    let profiles = getProfiles();
-    let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
-    
-    if(!currProf) {
-      currProf = { id: 'prof_' + Date.now(), accounts: [] };
-      profiles.push(currProf);
-      localStorage.setItem('ma_current_prof_id', currProf.id);
+    if(window.innerWidth > 768) {
+        setTimeout(() => {
+            try {
+                const el = typeof id === 'string' ? document.getElementById(id) : id;
+                if(el) el.focus();
+            } catch(e){}
+        }, 100);
     }
-
-    const existingIdx = currProf.accounts.findIndex(a => a.companyId === resCo.id && a.userName === name);
-    if(existingIdx >= 0) { 
-      currProf.accounts[existingIdx].pw = pw; 
-      currProf.accounts[existingIdx].companyName = resCo.name;
-    } else { 
-      currProf.accounts.push({ companyId: resCo.id, companyName: resCo.name, userName: name, pw: pw }); 
-    }
-    saveProfiles(profiles);
-    
-    document.getElementById('sg-code').value = ''; document.getElementById('sg-co-name').value = ''; document.getElementById('sg-name').value = ''; document.getElementById('sg-pw').value = '';
-    toast(`"${resCo.name}" 그룹이 내 목록에 연결되었습니다!`, 'success');
-    renderSavedGroups();
-  } catch(e) { toast(e.message || '검증 중 오류가 발생했습니다', 'error'); } finally { btn.disabled = false; }
-}
-
-function renderSavedGroups() {
-  const prof = getCurrentProfile();
-  const groups = prof ? prof.accounts : [];
-  const el = document.getElementById('saved-groups-list');
-
-  if(groups.length === 0) {
-    el.innerHTML = `<div class="empty" style="padding:40px;"><div class="empty-icon">🏢</div><div class="empty-text">연결된 그룹이 없습니다.</div></div>`; return;
-  }
-
-  el.innerHTML = groups.map((g, index) => {
-    const isActive = (g.companyId === S.companyId && g.userName === S.currentUser);
-    return `
-      <div class="meeting-card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; ${isActive ? 'border-color:var(--brand); background:var(--brand3); box-shadow:0 0 0 2px var(--brand-glow);' : ''}">
-        <div>
-          <div style="font-size:16px; font-weight:700; color:var(--text);">${g.companyName} ${isActive ? '<span class="badge badge-brand" style="margin-left:6px;">현재 접속 중</span>' : ''}</div>
-          <div style="font-size:13px; color:var(--text2); margin-top:4px;">로그인 계정: <b>${g.userName}</b></div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          ${!isActive ? `<button class="btn btn-primary btn-sm" onclick="switchToGroup(${index})">🔄 전환</button>` : ''}
-          <button class="btn btn-ghost btn-sm" style="color:var(--red); border-color:var(--border2);" onclick="removeGroup(${index})">삭제</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function removeGroup(index) {
-  if(!confirm('내 기기에서 이 연결을 삭제하시겠습니까?')) return;
-  let profiles = getProfiles();
-  let currProf = profiles.find(p => p.id === localStorage.getItem('ma_current_prof_id'));
-  if(currProf) {
-    currProf.accounts.splice(index, 1);
-    saveProfiles(profiles);
-    renderSavedGroups();
-  }
-}
-
-async function switchToGroup(index) {
-  const prof = getCurrentProfile();
-  if(!prof) return;
-  const g = prof.accounts[index]; 
-  if(!g) return;
-
-  try {
-    if (g.pw) {
-      const resLogin = await api('POST', '/login', { name: g.userName, pw: g.pw, companyId: g.companyId });
-      if(resLogin.error) throw new Error('비밀번호가 변경되었습니다. 연결을 삭제하고 다시 추가해주세요.');
-    }
-    localStorage.setItem('ma_company_id', g.companyId); 
-    localStorage.setItem('ma_company_name', g.companyName); 
-    localStorage.setItem('ma_user', g.userName);
-    location.reload();
-  } catch(e) { toast(e.message || '서버 연결 오류', 'error'); }
-}
-
- // ★ 안드로이드 IME(한글 키보드) 꼬임 자동 복구 스크립트
-  document.querySelectorAll('.form-input').forEach(el => {
-    if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === '')) {
-      // 중략 ...
-    }
-  });
-
-// ★ 추가 3: 비밀번호 초기화(이메일 연동) JS 로직
-// ═══════════════════════════════════════════════
-function openResetPwModal() {
-  document.getElementById('reset-name-input').value = '';
-  document.getElementById('reset-email-input').value = '';
-  document.getElementById('reset-pw-overlay').classList.add('show');
-}
-
-function closeResetPwModal() {
-  document.getElementById('reset-pw-overlay').classList.remove('show');
-}
-
-async function requestPasswordReset() {
-  const name = document.getElementById('reset-name-input').value.trim();
-  const email = document.getElementById('reset-email-input').value.trim();
-  const btn = document.getElementById('btn-reset-pw');
-  
-  if (!name || !email) {
-    toast('이름과 이메일을 모두 입력하세요.', 'error');
-    return;
-  }
-  
-  if (!S.companyId) {
-    toast('먼저 초대코드를 입력하여 회사를 선택해야 합니다.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = '발송 중...';
-
-  try {
-    const res = await api('POST', '/reset-password', { name, email, companyId: S.companyId });
-    if (res.error) {
-      toast(res.error, 'error');
-    } else {
-      alert(`✅ ${name}님의 이메일(${email})로 임시 비밀번호가 발송되었습니다.\n확인 후 로그인하여 반드시 비밀번호를 변경해주세요.`);
-      closeResetPwModal();
-    }
-  } catch (e) {
-    toast('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '임시번호 발급';
-  }
 }
 
 boot();
