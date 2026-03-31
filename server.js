@@ -2,11 +2,14 @@
  * MeetAlarm Global Server - Render 배포용
  * - PostgreSQL 기반 (Render 무료 DB 사용)
  * - 회사별 데이터 완전 격리 (Multi-tenant)
+ * - [보안 강화] bcrypt 비밀번호 암호화 및 이메일 초기화 적용
  */
 
 const http = require('http');
 const WebSocket = require('ws');
 const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3000;
 
@@ -14,6 +17,15 @@ const PORT = process.env.PORT || 3000;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
+});
+
+// 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com', // 운영자 구글 이메일
+    pass: process.env.EMAIL_PASS || 'your-app-password'     // 구글 앱 비밀번호
+  }
 });
 
 // DB 테이블 초기화
@@ -30,6 +42,7 @@ async function initDB() {
       company_id TEXT,
       pw TEXT NOT NULL,
       dept_id TEXT,
+      email TEXT, -- 비밀번호 찾기용 이메일
       PRIMARY KEY (name, company_id)
     );
 
@@ -103,13 +116,14 @@ async function initDB() {
     );
   `);
   console.log('DB 초기화 완료');
+  
+  // 기존 테이블 하위 호환성을 위한 ALTER 처리
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS minutes_list TEXT'); } catch(e) {}
   try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()'); } catch(e) {}
-  
-  // ★ 추가: 사용자 개인 설정 저장을 위한 컬럼 추가
   try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS hidden_ids TEXT'); } catch(e) {}
   try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS today_done_ids TEXT'); } catch(e) {}
+  try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT'); } catch(e) {}
 }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -132,11 +146,9 @@ const httpServer = http.createServer(async (req, res) => {
     req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch(e) { resolve({}); } });
   });
 
-  
   // 유저 목록 불러오기 (설정값 변환 헬퍼 함수)
   const fetchUsers = async (cId) => {
-    // ★ NULLS FIRST와 name ASC를 추가하여 어떤 수정을 가해도 순서가 절대 섞이지 않게 고정
-    const { rows } = await pool.query('SELECT name,dept_id,hidden_ids,today_done_ids FROM users WHERE company_id=$1 ORDER BY created_at ASC NULLS FIRST, name ASC', [cId]);
+    const { rows } = await pool.query('SELECT name,dept_id,email,hidden_ids,today_done_ids FROM users WHERE company_id=$1 ORDER BY created_at ASC NULLS FIRST, name ASC', [cId]);
     return rows.map(r => ({
       ...r, 
       hiddenIds: r.hidden_ids ? JSON.parse(r.hidden_ids) : [],
@@ -176,10 +188,14 @@ const httpServer = http.createServer(async (req, res) => {
 
     // ── 회원가입 / 로그인 ───────────────────────
     if (req.method === 'POST' && url === '/api/register') {
-      const { name, pw, deptId, companyId: cId } = await getBody();
+      const { name, email, pw, deptId, companyId: cId } = await getBody();
       const { rows } = await pool.query('SELECT name FROM users WHERE name=$1 AND company_id=$2', [name, cId]);
       if (rows.length) return send({ error: '이미 사용 중인 이름입니다' }, 400);
-      await pool.query('INSERT INTO users(name,company_id,pw,dept_id) VALUES($1,$2,$3,$4)', [name, cId, pw, deptId || null]);
+      
+      // 단방향 암호화 적용 (Salt Rounds: 10)
+      const hashedPw = await bcrypt.hash(pw, 10);
+      
+      await pool.query('INSERT INTO users(name,company_id,pw,dept_id,email) VALUES($1,$2,$3,$4,$5)', [name, cId, hashedPw, deptId || null, email]);
       const updatedUsers = await fetchUsers(cId);
       broadcast(cId, { event: 'users_updated', data: updatedUsers });
       return send({ ok: true });
@@ -188,20 +204,70 @@ const httpServer = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url === '/api/login') {
       const { name, pw, companyId: cId } = await getBody();
       const { rows } = await pool.query('SELECT * FROM users WHERE name=$1 AND company_id=$2', [name, cId]);
-      if (!rows.length || rows[0].pw !== pw) return send({ error: '이름 또는 비밀번호가 틀렸습니다' }, 401);
+      
+      if (!rows.length) return send({ error: '이름 또는 비밀번호가 틀렸습니다' }, 401);
+      
+      // 저장된 해시값과 입력받은 비밀번호 비교
+      const isMatch = await bcrypt.compare(pw, rows[0].pw);
+      if (!isMatch) return send({ error: '이름 또는 비밀번호가 틀렸습니다' }, 401);
+      
       return send({ ok: true, deptId: rows[0].dept_id });
     }
 
-    // ★ 추가: 내 이름과 비밀번호로 가입된 모든 회사 목록 불러오기 (Magic Sync)
+    // ── 비밀번호 초기화 (이메일 발송) ───────────
+    if (req.method === 'POST' && url === '/api/reset-password') {
+      const { name, email, companyId: cId } = await getBody();
+      
+      const { rows } = await pool.query('SELECT * FROM users WHERE name=$1 AND company_id=$2 AND email=$3', [name, cId, email]);
+      if (rows.length === 0) return send({ error: '일치하는 사용자 정보가 없습니다.' }, 404);
+
+      // 랜덤 임시 비밀번호 8자리 생성 및 암호화
+      const tempPw = Math.random().toString(36).slice(-8);
+      const hashedPw = await bcrypt.hash(tempPw, 10);
+      
+      // DB 업데이트
+      await pool.query('UPDATE users SET pw=$1 WHERE name=$2 AND company_id=$3', [hashedPw, name, cId]);
+
+      // 메일 발송 설정
+      const mailOptions = {
+        from: process.env.EMAIL_USER || 'your-email@gmail.com',
+        to: email,
+        subject: '[MeetAlarm] 임시 비밀번호 발급 안내',
+        text: `안녕하세요 ${name}님,\n\n요청하신 임시 비밀번호는 [ ${tempPw} ] 입니다.\n로그인 후 반드시 설정에서 비밀번호를 변경해 주세요.`
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        return send({ ok: true, message: '이메일로 임시 비밀번호가 발송되었습니다.' });
+      } catch (error) {
+        console.error('Email send error:', error);
+        return send({ error: '이메일 발송에 실패했습니다. 서버 설정을 확인하세요.' }, 500);
+      }
+    }
+
+    // 그룹 동기화 (bcrypt 적용 시 평문 쿼리가 불가하므로 로직 변경)
     if (req.method === 'POST' && url === '/api/sync-groups') {
       const { name, pw } = await getBody();
       if (!name || !pw) return send({ error: '정보 누락' }, 400);
+      
       const { rows } = await pool.query(`
         SELECT u.company_id, c.name as company_name, u.name as user_name, u.pw
         FROM users u JOIN companies c ON u.company_id = c.id
-        WHERE u.name = $1 AND u.pw = $2
-      `, [name, pw]);
-      return send(rows);
+        WHERE u.name = $1
+      `, [name]);
+      
+      const matchedRows = [];
+      for (let row of rows) {
+        if (await bcrypt.compare(pw, row.pw)) {
+          matchedRows.push({
+            company_id: row.company_id,
+            company_name: row.company_name,
+            user_name: row.user_name,
+            pw: pw // 프론트엔드의 다중 계정 유지를 위해 평문 리턴 (HTTPS 필수)
+          });
+        }
+      }
+      return send(matchedRows);
     }
 
     if (req.method === 'GET' && url === '/api/users') {
@@ -212,7 +278,7 @@ const httpServer = http.createServer(async (req, res) => {
     // ── 이하 모든 API는 companyId 필수 ──────────
     if (!companyId) return send({ error: '접근 권한 없음' }, 403);
 
-    // ── ★ 추가: 사용자 개인 설정(숨긴 미팅, 취소선) 저장 ──
+    // 사용자 개인 설정(숨긴 미팅, 취소선) 저장
     if (req.method === 'PUT' && url.includes('/prefs') && url.startsWith('/api/users/')) {
       const name = decodeURIComponent(url.split('/')[3]);
       const { hiddenIds, todayDoneIds } = await getBody();
@@ -227,12 +293,16 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    // ── 구성원 관리 ─────────────────────────────
+    // 구성원 관리
     if (req.method === 'PUT' && url.startsWith('/api/users/') && !url.includes('/prefs')) {
       const name = decodeURIComponent(url.split('/').pop());
       const { deptId, pw } = await getBody();
-      if (pw) await pool.query('UPDATE users SET dept_id=$1,pw=$2 WHERE name=$3 AND company_id=$4', [deptId, pw, name, companyId]);
-      else await pool.query('UPDATE users SET dept_id=$1 WHERE name=$2 AND company_id=$3', [deptId, name, companyId]);
+      if (pw) {
+        const hashedPw = await bcrypt.hash(pw, 10);
+        await pool.query('UPDATE users SET dept_id=$1,pw=$2 WHERE name=$3 AND company_id=$4', [deptId, hashedPw, name, companyId]);
+      } else {
+        await pool.query('UPDATE users SET dept_id=$1 WHERE name=$2 AND company_id=$3', [deptId, name, companyId]);
+      }
       const updatedUsers = await fetchUsers(companyId);
       broadcast(companyId, { event: 'users_updated', data: updatedUsers });
       return send({ ok: true });
