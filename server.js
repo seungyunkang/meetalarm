@@ -5,10 +5,11 @@
  * - [보안 강화] bcrypt 비밀번호 암호화 및 이메일 초기화 적용
  */
 
+require('dns').setDefaultResultOrder('ipv4first'); // ★ 노드 엔진에 IPv4 강제 지시
+
 const http = require('http');
 const WebSocket = require('ws');
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+const { Pool } = require('pg');const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 
 const PORT = process.env.PORT || 3000;
@@ -20,14 +21,16 @@ const pool = new Pool({
 });
 
 // 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
+// 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER || 'your-email@gmail.com', // 운영자 구글 이메일
     pass: process.env.EMAIL_PASS || 'your-app-password'     // 구글 앱 비밀번호
   }
 });
-
 // DB 테이블 초기화
 async function initDB() {
   await pool.query(`
