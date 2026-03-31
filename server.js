@@ -23,13 +23,18 @@ const pool = new Pool({
 // 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
 // 이메일 발송기 설정 (실제 운영 시 환경변수로 관리하는 것을 권장함)
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  host: 'smtp.gmail.com',  // ★ 서비스명 대신 호스트 주소 직접 입력
+  port: 465,               // ★ 보안 포트 고정
+  secure: true,            // ★ SSL 보안 연결 강제
   auth: {
-    user: process.env.EMAIL_USER || 'your-email@gmail.com', // 운영자 구글 이메일
-    pass: process.env.EMAIL_PASS || 'your-app-password'     // 구글 앱 비밀번호
-  }
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
+  },
+  // ★ 중요: 네트워크 연결 시 IPv4 가족(Family: 4)만 사용하도록 강제
+  connectionTimeout: 10000, 
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+  dnsVapi: false           // 시스템의 잘못된 DNS 설정을 무시하도록 설정
 });
 // DB 테이블 초기화
 async function initDB() {
