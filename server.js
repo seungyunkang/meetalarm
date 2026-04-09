@@ -105,11 +105,6 @@ async function initDB() {
   console.log('DB 초기화 완료');
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS archived INTEGER DEFAULT 0'); } catch(e) {}
   try { await pool.query('ALTER TABLE meetings ADD COLUMN IF NOT EXISTS minutes_list TEXT'); } catch(e) {}
-  try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()'); } catch(e) {}
-  
-  // ★ 추가: 사용자 개인 설정 저장을 위한 컬럼 추가
-  try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS hidden_ids TEXT'); } catch(e) {}
-  try { await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS today_done_ids TEXT'); } catch(e) {}
 }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -132,18 +127,6 @@ const httpServer = http.createServer(async (req, res) => {
     req.on('end', () => { try { resolve(JSON.parse(body || '{}')); } catch(e) { resolve({}); } });
   });
 
-  
-  // 유저 목록 불러오기 (설정값 변환 헬퍼 함수)
-  const fetchUsers = async (cId) => {
-    // ★ NULLS FIRST와 name ASC를 추가하여 어떤 수정을 가해도 순서가 절대 섞이지 않게 고정
-    const { rows } = await pool.query('SELECT name,dept_id,hidden_ids,today_done_ids FROM users WHERE company_id=$1 ORDER BY created_at ASC NULLS FIRST, name ASC', [cId]);
-    return rows.map(r => ({
-      ...r, 
-      hiddenIds: r.hidden_ids ? JSON.parse(r.hidden_ids) : [],
-      todayDoneIds: r.today_done_ids ? JSON.parse(r.today_done_ids) : []
-    }));
-  };
-
   try {
     // ── 핑 테스트 ──────────────────────────────
     if (url === '/api/ping') return send({ ok: true });
@@ -163,11 +146,13 @@ const httpServer = http.createServer(async (req, res) => {
       return rows.length ? send(rows[0]) : send({ error: '유효하지 않은 초대코드입니다' }, 404);
     }
 
+    // 현재 초대코드 조회 (관리자용)
     if (req.method === 'GET' && url === '/api/company/invite-code') {
       const { rows } = await pool.query('SELECT invite_code FROM companies WHERE id=$1', [companyId]);
       return rows.length ? send({ inviteCode: rows[0].invite_code }) : send({ error: 'Not found' }, 404);
     }
 
+    // 초대코드 재발급 (관리자용)
     if (req.method === 'POST' && url === '/api/company/regen-invite') {
       const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
       await pool.query('UPDATE companies SET invite_code=$1 WHERE id=$2', [newCode, companyId]);
@@ -175,13 +160,13 @@ const httpServer = http.createServer(async (req, res) => {
     }
 
     // ── 회원가입 / 로그인 ───────────────────────
+  // ── 회원가입 / 로그인 ───────────────────────
     if (req.method === 'POST' && url === '/api/register') {
       const { name, pw, deptId, companyId: cId } = await getBody();
       const { rows } = await pool.query('SELECT name FROM users WHERE name=$1 AND company_id=$2', [name, cId]);
       if (rows.length) return send({ error: '이미 사용 중인 이름입니다' }, 400);
       await pool.query('INSERT INTO users(name,company_id,pw,dept_id) VALUES($1,$2,$3,$4)', [name, cId, pw, deptId || null]);
-      const updatedUsers = await fetchUsers(cId);
-      broadcast(cId, { event: 'users_updated', data: updatedUsers });
+      broadcast(cId, { event: 'users_updated' });
       return send({ ok: true });
     }
 
@@ -192,61 +177,41 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true, deptId: rows[0].dept_id });
     }
 
-    // ★ 추가: 내 이름과 비밀번호로 가입된 모든 회사 목록 불러오기 (Magic Sync)
+    // 🟢 [여기에 새로 추가] 사용자의 모든 그룹(회사) 정보를 불러오는 동기화 API 🟢
     if (req.method === 'POST' && url === '/api/sync-groups') {
       const { name, pw } = await getBody();
-      if (!name || !pw) return send({ error: '정보 누락' }, 400);
-      const { rows } = await pool.query(`
-        SELECT u.company_id, c.name as company_name, u.name as user_name, u.pw
-        FROM users u JOIN companies c ON u.company_id = c.id
-        WHERE u.name = $1 AND u.pw = $2
-      `, [name, pw]);
-      return send(rows);
+      if (!name || !pw) return send({ error: '이름과 비밀번호를 입력하세요' }, 400);
+
+      // 이름과 비밀번호가 모두 일치하는 계정과 해당 회사명을 조인(JOIN)하여 조회
+      const { rows } = await pool.query(
+        `SELECT u.company_id, u.name as user_name, c.name as company_name 
+         FROM users u 
+         JOIN companies c ON u.company_id = c.id 
+         WHERE u.name = $1 AND u.pw = $2`,
+        [name, pw]
+      );
+      
+      const matched = rows.map(r => ({
+        company_id: r.company_id,
+        company_name: r.company_name,
+        user_name: r.user_name,
+        pw: pw
+      }));
+      
+      return send(matched);
     }
+    // 🟢 [추가 끝] 🟢
 
     if (req.method === 'GET' && url === '/api/users') {
-      const updatedUsers = await fetchUsers(companyId);
-      return send(updatedUsers);
+      const { rows } = await pool.query('SELECT name,dept_id FROM users WHERE company_id=$1', [companyId]);
+      return send(rows);
     }
 
     // ── 이하 모든 API는 companyId 필수 ──────────
     if (!companyId) return send({ error: '접근 권한 없음' }, 403);
 
-    // ── ★ 추가: 사용자 개인 설정(숨긴 미팅, 취소선) 저장 ──
-    if (req.method === 'PUT' && url.includes('/prefs') && url.startsWith('/api/users/')) {
-      const name = decodeURIComponent(url.split('/')[3]);
-      const { hiddenIds, todayDoneIds } = await getBody();
-      
-      await pool.query(
-        'UPDATE users SET hidden_ids=$1, today_done_ids=$2 WHERE name=$3 AND company_id=$4',
-        [JSON.stringify(hiddenIds || []), JSON.stringify(todayDoneIds || []), name, companyId]
-      );
-      
-      const updatedUsers = await fetchUsers(companyId);
-      broadcast(companyId, { event: 'users_updated', data: updatedUsers });
-      return send({ ok: true });
-    }
-
-    // ── 구성원 관리 ─────────────────────────────
-    if (req.method === 'PUT' && url.startsWith('/api/users/') && !url.includes('/prefs')) {
-      const name = decodeURIComponent(url.split('/').pop());
-      const { deptId, pw } = await getBody();
-      if (pw) await pool.query('UPDATE users SET dept_id=$1,pw=$2 WHERE name=$3 AND company_id=$4', [deptId, pw, name, companyId]);
-      else await pool.query('UPDATE users SET dept_id=$1 WHERE name=$2 AND company_id=$3', [deptId, name, companyId]);
-      const updatedUsers = await fetchUsers(companyId);
-      broadcast(companyId, { event: 'users_updated', data: updatedUsers });
-      return send({ ok: true });
-    }
-
-    if (req.method === 'DELETE' && url.startsWith('/api/users/')) {
-      const name = decodeURIComponent(url.split('/').pop());
-      await pool.query('DELETE FROM users WHERE name=$1 AND company_id=$2', [name, companyId]);
-      const updatedUsers = await fetchUsers(companyId);
-      broadcast(companyId, { event: 'users_updated', data: updatedUsers });
-      return send({ ok: true });
-    }
-
     // ── 미팅 ────────────────────────────────────
+    // 정기 미팅 회의록 아카이브 - 저장과 동시에 archived=1
     if (req.method === 'POST' && url === '/api/meetings/save-and-archive') {
       const b = await getBody();
       const id = 'meet_' + Date.now();
@@ -257,6 +222,7 @@ const httpServer = http.createServer(async (req, res) => {
          JSON.stringify(b.attendees || []), b.alarm1, b.agenda, b.zoomLink || '',
          JSON.stringify(b.minutes_list || [])]
       );
+      // 아카이브 저장이라 대시보드엔 안 보임, 종료 알림만 broadcast
       broadcast(companyId, { event: 'meeting_ended', data: { ...b, id } });
       return send({ ok: true, id });
     }
@@ -270,6 +236,7 @@ const httpServer = http.createServer(async (req, res) => {
       })));
     }
 
+    // 아카이브 미팅 조회 시에도 minutes_list 포함
     if (req.method === 'GET' && url === '/api/meetings/archived') {
       const { rows } = await pool.query('SELECT * FROM meetings WHERE company_id=$1 AND archived=1 ORDER BY datetime DESC', [companyId]);
       return send(rows.map(r => ({ 
@@ -279,6 +246,7 @@ const httpServer = http.createServer(async (req, res) => {
       })));
     }
 
+    // 회의록 저장 API
     if (req.method === 'PUT' && url.includes('/minutes_list')) {
       const id = url.split('/')[3];
       const { minutes_list } = await getBody();
@@ -357,8 +325,12 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
-    if (req.method === 'PUT' && url.includes('/hide')) { return send({ ok: true }); }
-    if (req.method === 'PUT' && url.includes('/unhide')) { return send({ ok: true }); }
+    if (req.method === 'PUT' && url.includes('/hide')) {
+      return send({ ok: true }); // hide는 클라이언트 localStorage에서 처리
+    }
+    if (req.method === 'PUT' && url.includes('/unhide')) {
+      return send({ ok: true });
+    }
 
     // ── 부서 ────────────────────────────────────
     if (req.method === 'GET' && url === '/api/departments') {
@@ -389,6 +361,25 @@ const httpServer = http.createServer(async (req, res) => {
       await pool.query('DELETE FROM departments WHERE id=$1 AND company_id=$2', [id, companyId]);
       const { rows } = await pool.query('SELECT id,name,color FROM departments WHERE company_id=$1', [companyId]);
       broadcast(companyId, { event: 'dept_updated', data: rows });
+      return send({ ok: true });
+    }
+
+    // ── 구성원 관리 ─────────────────────────────
+    if (req.method === 'PUT' && url.startsWith('/api/users/')) {
+      const name = decodeURIComponent(url.split('/').pop());
+      const { deptId, pw } = await getBody();
+      if (pw) await pool.query('UPDATE users SET dept_id=$1,pw=$2 WHERE name=$3 AND company_id=$4', [deptId, pw, name, companyId]);
+      else await pool.query('UPDATE users SET dept_id=$1 WHERE name=$2 AND company_id=$3', [deptId, name, companyId]);
+      const { rows } = await pool.query('SELECT name,dept_id FROM users WHERE company_id=$1', [companyId]);
+      broadcast(companyId, { event: 'users_updated', data: rows });
+      return send({ ok: true });
+    }
+
+    if (req.method === 'DELETE' && url.startsWith('/api/users/')) {
+      const name = decodeURIComponent(url.split('/').pop());
+      await pool.query('DELETE FROM users WHERE name=$1 AND company_id=$2', [name, companyId]);
+      const { rows } = await pool.query('SELECT name,dept_id FROM users WHERE company_id=$1', [companyId]);
+      broadcast(companyId, { event: 'users_updated', data: rows });
       return send({ ok: true });
     }
 
@@ -434,15 +425,11 @@ const httpServer = http.createServer(async (req, res) => {
       const { rows: tRows } = await pool.query('SELECT data FROM recurring_templates WHERE company_id=$1', [companyId]);
       const { rows: oRows } = await pool.query('SELECT key,data FROM recurring_overrides WHERE company_id=$1', [companyId]);
       const { rows: cRows } = await pool.query('SELECT id FROM recurring_completed WHERE company_id=$1', [companyId]);
-      const { rows: mRows } = await pool.query('SELECT DISTINCT rec_instance_id FROM recurring_minutes WHERE company_id=$1', [companyId]);
-      
       const templates = tRows.map(r => JSON.parse(r.data));
       const overrides = {};
       oRows.forEach(r => { overrides[r.key] = JSON.parse(r.data); });
       const completed = cRows.map(r => r.id);
-      const withMinutes = mRows.map(r => r.rec_instance_id);
-
-      return send({ templates, overrides, completed, withMinutes });
+      return send({ templates, overrides, completed });
     }
 
     if (req.method === 'POST' && url === '/api/recurring/templates') {
@@ -473,6 +460,7 @@ const httpServer = http.createServer(async (req, res) => {
       return send({ ok: true });
     }
 
+    // ── 정기 미팅 완료 처리 ──────────────────────
     if (req.method === 'POST' && url.startsWith('/api/recurring/completed')) {
       const { id } = await getBody();
       await pool.query(
